@@ -2,11 +2,11 @@
 # Forked from https://gist.github.com/smileart/3750104
 # This mod is located here: https://github.com/el1t/agnostermod/
 
-ZSH_THEME_GIT_PROMPT_DIRTY='±'
+ZSH_THEME_GIT_PROMPT_DIRTY='± '
 local GIT_OUTPUT=
 
 function _git_info() {
-	local ref dirty mode repo_path
+	local ref dirty mode repo_path BRANCH
 
 	if $(git rev-parse --is-inside-work-tree >/dev/null 2>&1); then
 		local BG_COLOR=green
@@ -37,8 +37,9 @@ function _git_info() {
 		fi
 
 		# number of chars in dirty (above), branch, mode (above), and spaces + symbols
-		(( GIT_OUTPUT += ${#${ref/refs\/heads}%%} + 3 + 3 ))
-		echo -n "${ref/refs\/heads\//⭠ } $dirty$(_git_remote_status)${mode} %{%F{$BG_COLOR}%K{blue}%}⮀"
+		BRANCH=${${ref/refs\/heads\/}%%}
+		echo -n "⭠ $BRANCH $dirty$(_git_remote_status)${mode}%{%F{$BG_COLOR}%K{blue}%}⮀"
+		(( GIT_OUTPUT += ${#BRANCH} + 3 + 3 ))
 	else
 		GIT_OUTPUT=1
 		echo -n "%{%K{blue}%}⮀"
@@ -48,11 +49,10 @@ function _git_info() {
 _git_remote_status() {
 	remote=${$(command git rev-parse --verify ${hook_com[branch]}@{upstream} --symbolic-full-name 2>/dev/null)/refs\/remotes\/}
 	if [[ -n ${remote} ]]; then
-		ahead=$(command git rev-list ${hook_com[branch]}@{upstream}..HEAD 2>/dev/null | wc -l)
-		behind=$(command git rev-list HEAD..${hook_com[branch]}@{upstream} 2>/dev/null | wc -l)
+		ahead=$(command git rev-list ${hook_com[branch]}@{upstream}..HEAD 2>/dev/null | wc -l | xargs echo)
+		behind=$(command git rev-list HEAD..${hook_com[branch]}@{upstream} 2>/dev/null | wc -l | xargs echo)
 
 		if [ $behind -gt 0 ] || [ $ahead -gt 0 ]; then
-			echo -n " "
 			if [ $behind -gt 0 ]; then
 				(( GIT_OUTPUT += $#behind ))
 				echo -n "↓$behind"
@@ -125,7 +125,6 @@ function virtualenv_info {
 # ${var} and $(method) are different!!
 # %b = , %f = , %k = , %K = highlight, %F = foreground text, %B = , %E = (apply formatting until) to end of line
 
-#PROMPT_DIR='%{%F{white}%} %~%  '
 PROMPT_SU='%(!.%{%k%F{blue}%K{black}%}⮀%{%F{yellow}%} ⚡ %{%F{black}%K{red}%}.%{%F{blue}%K{white}%})⮀'
 
 PROMPT='%{%f%k%b%}
