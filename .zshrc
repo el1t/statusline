@@ -16,14 +16,26 @@ alias zsource="source ~/.zshrc"
 alias clr="rm /Users/El1t/.zsh_history;tab;exit"
 alias py="python3"
 alias csl="ssh -t user_name@host ssh\ $(gshuf -n 1 -e xilonen tlaloc teteoinnan)"
-alias csps="ssh -t user_name@host \"ssh -t $(gshuf -n 1 -e xilonen tlaloc teteoinnan) 'lpstat -a'\""
+# alias csps="ssh -t user_name@host \"ssh -t $(gshuf -n 1 -e xilonen tlaloc teteoinnan) 'lpstat -a'\""
 alias printers="lpstat -a"
 hash -d AI=~/Documents/School/AI
 hash -d repo=~/Documents/Git
 hash -d school=~/Documents/School
 hash -d trash=~/.Trash
 
-cscp() {
+cspr() {
+	local printer=accepting
+	if [[ -n $1 ]]; then
+		if [[ $1 -eq '-help' ]]; then
+			echo "usage: cspr [printer]"
+			return
+		fi
+		printer=$1
+	fi
+	ssh -t user@host "ssh -t $(gshuf -n 1 -e xilonen tlaloc teteoinnan) 'lpstat -a'" | grep $printer
+}
+
+ccp() {
 	if [[ -n $1 ]]; then
 		if [[ -n $2 ]]; then
 			scp $1 user_name@host:$2
@@ -36,7 +48,7 @@ cscp() {
 	fi
 }
 
-cspr() {
+csp() {
 	local printer=115A
 	if [[ -n $1 ]]; then
 		if [[ -n $2 ]]; then
