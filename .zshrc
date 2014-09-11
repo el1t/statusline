@@ -1,4 +1,3 @@
-# BACKUP COPY—replaced sensitive strings
 # Path to your oh-my-zsh configuration.
 ZSH=$HOME/.oh-my-zsh
 
@@ -15,15 +14,15 @@ alias ohmyzsh="stt ~/.oh-my-zsh"
 alias zsource="source ~/.zshrc"
 alias clr="rm /Users/El1t/.zsh_history;tab;exit"
 alias py="python3"
-alias csl="ssh -t user_name@host ssh\ $(gshuf -n 1 -e xilonen tlaloc teteoinnan)"
-# alias csps="ssh -t user_name@host \"ssh -t $(gshuf -n 1 -e xilonen tlaloc teteoinnan) 'lpstat -a'\""
+alias csl="ssh -t 2015etsung@remote.tjhsst.edu ssh\ $(gshuf -n 1 -e xilonen tlaloc teteoinnan)"
+# alias csps="ssh -t 2015etsung@remote.tjhsst.edu \"ssh -t $(gshuf -n 1 -e xilonen tlaloc teteoinnan) 'lpstat -a'\" | grep accepting"
 alias printers="lpstat -a"
-hash -d AI=~/Documents/School/AI
+hash -d cs=~/Documents/School/Computer\ Sys
 hash -d repo=~/Documents/Git
 hash -d school=~/Documents/School
 hash -d trash=~/.Trash
 
-cspr() {
+cps() {
 	local printer=accepting
 	if [[ -n $1 ]]; then
 		if [[ $1 -eq '-help' ]]; then
@@ -32,23 +31,24 @@ cspr() {
 		fi
 		printer=$1
 	fi
-	ssh -t user@host "ssh -t $(gshuf -n 1 -e xilonen tlaloc teteoinnan) 'lpstat -a'" | grep $printer
+	ssh -t 2015etsung@remote.tjhsst.edu "ssh -t $(gshuf -n 1 -e xilonen tlaloc teteoinnan) 'lpstat -a'" | grep $printer
 }
 
-ccp() {
+cscp() {
 	if [[ -n $1 ]]; then
 		if [[ -n $2 ]]; then
-			scp $1 user_name@host:$2
+			echo "Sending to folder $2"
+			scp $1 2015etsung@remote.tjhsst.edu:$2
 		else
 			echo "Defaulting to ~/Documents folder."
-			scp $1 user_name@host:Documents
+			scp $1 2015etsung@remote.tjhsst.edu:Documents
 		fi
 	else
 		echo "usage: cscp local_file [remote_directory]"
 	fi
 }
 
-csp() {
+cpr() {
 	local printer=115A
 	if [[ -n $1 ]]; then
 		if [[ -n $2 ]]; then
@@ -56,9 +56,37 @@ csp() {
 		else
 			echo Printing to 115A.
 		fi
-		ssh -t user_name@host "ssh -t $(gshuf -n 1 -e xilonen tlaloc teteoinnan) \"lpr -P $printer $1\""
+		ssh -t 2015etsung@remote.tjhsst.edu "ssh -t $(gshuf -n 1 -e xilonen tlaloc teteoinnan) \"lpr -P $printer $1\""
 	else
-		echo "usage: csp remote_filepath [printer]"
+		echo "usage: cpr remote_file [printer]"
+	fi
+}
+
+csprint() {
+	local printer=115A
+	local remote_directory=Documents
+	if [[ -n $1 ]]; then
+		if [[ -n $2 ]]; then
+			if [[ -n $3 ]]; then
+				remote_directory=$2
+				printer=$3
+				echo "Sending to folder $2"
+				echo "Printing to $3"
+			else
+				printer=$2
+				echo "Defaulting to ~/Documents"
+				echo "Printing to $2"
+			fi
+		else
+			echo "Defaulting to ~/Documents"
+			echo "Printing to 115A"
+		fi
+		echo "===Sending File==="
+		scp $1 2015etsung@remote.tjhsst.edu:$remote_directory
+		echo "=====Printing====="
+		ssh -t 2015etsung@remote.tjhsst.edu "ssh -t $(gshuf -n 1 -e xilonen tlaloc teteoinnan) \"lpr -P $3 $2/$1\""
+	else
+		echo "usage: csprint local_file [printer|remote_directory printer]"
 	fi
 }
 
@@ -91,12 +119,19 @@ export UPDATE_ZSH_DAYS=7
 # much faster.
 DISABLE_UNTRACKED_FILES_DIRTY="true"
 
+# Use vim as editor
+export EDITOR="vim"
+
 # Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 plugins=(git osx sublime terminalapp brew)
 
 source $ZSH/oh-my-zsh.sh
+
+# Uncomment following line if you want to enable powerline
+# export POWERLINE_COMMAND=~/Library/Python/2.7/bin/powerline
+# source $HOME/Library/Python/2.7/lib/python/site-packages/powerline/bindings/zsh/powerline.zsh
 
 # Customize to your needs...
 export PATH=$PATH:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/Applications/adt-bundle-mac-x86_64-20131030/sdk/tools:/Applications/adt-bundle-mac-x86_64-20131030/sdk/platform-tools
