@@ -38,7 +38,7 @@ function _git_info() {
 
 		# number of chars in dirty (above), branch, mode (above), and spaces + symbols
 		BRANCH=${${ref/refs\/heads\/}%%}
-		echo -n "⭠ $BRANCH $dirty$(_git_remote_status)${mode}%{%F{$BG_COLOR}%K{blue}%}⮀"
+		echo -n " $BRANCH $dirty$(_git_remote_status)${mode}%{%F{$BG_COLOR}%K{blue}%}⮀"
 		(( GIT_OUTPUT += ${#BRANCH} + 3 + 3 ))
 	else
 		GIT_OUTPUT=1
@@ -72,9 +72,10 @@ function get_PWD {
 	if [[ ${#${(%):-%~}} -gt ${termwidth} ]]; then
 		echo "%${termwidth}<…<%~%<<"
 	else
-		echo "${(%):-%~}"
+		echo ${(C)${(%):-%~}}
 	fi
 	# What is %~ and (%)??
+	# ${(C)__string__} capitalizes the first character of each word, zsh style
 }
 
 # simply counts the spaces available
@@ -85,7 +86,7 @@ function count_spacing {
 		(( GIT_OUTPUT += 4 ))
 	fi
 	# from the total width, subtract spaces, name, machine name, time, extra spacing, history count, and git output
-	echo $(( ${COLUMNS} - 27 - ${#$%n} - ${#$%m} - ${#$%t} - $GIT_OUTPUT - ${#$%!} ))
+	echo $(( ${COLUMNS} - 22 - ${#$%n} - ${#$%m} - ${#$%t} - $GIT_OUTPUT - ${#$%!} ))
 }
 
 # prints status of last command and the user name
@@ -115,7 +116,7 @@ function statusbar_right() {
 	# print machine name
 	echo -n "%{%F{yellow}%}⮂%{$fg[black]%K{yellow}%} @%m "
 	# print history number
-	echo -n "%{%F{white}%}⮂%{%K{white}%f%} !%{%B%F{blue}%}%!"
+	echo -n "%{%F{white}%}⮂%{%K{white}%f%} !%{%F{blue}%}%!"
 }
 
 function virtualenv_info {
