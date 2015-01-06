@@ -1,27 +1,31 @@
 # Path to your oh-my-zsh configuration.
 ZSH=$HOME/.oh-my-zsh
 
-
 # Set name of the theme to load.
 # Look in ~/.oh-my-zsh/themes/
 # Optionally, if you set this to "random", it'll load a random theme each
 # time that oh-my-zsh is loaded.
 ZSH_THEME="agnostermod"
 
-# Example aliases
+# Equivalent to `whoami`
+DEFAULT_USER=`id -un`
+
+# Aliases
 alias zshconfig="st ~/.zshrc"
 alias ohmyzsh="stt ~/.oh-my-zsh"
 alias zsource="source ~/.zshrc"
-alias clr="rm /Users/El1t/.zsh_history;tab;exit"
+alias clr="rm ~/.zsh_history;tab;exit"
 alias py="python3"
-alias csl="ssh -t 2015etsung@remote.tjhsst.edu ssh\ $(gshuf -n 1 -e xilonen tlaloc teteoinnan)"
-# alias csps="ssh -t 2015etsung@remote.tjhsst.edu \"ssh -t $(gshuf -n 1 -e xilonen tlaloc teteoinnan) 'lpstat -a'\" | grep accepting"
+alias adbt="adb connect 192.168.43.1"
+alias brewup="echo 'Updating brew formulae...';brew update;echo 'Upgrading brew packages...';brew upgrade"
+alias csl="ssh -t 2015etsung@remote.tjhsst.edu ssh\ $(gshuf -n 1 -e xilonen tlaloc teteoinnan grover honeydew gonzo oscar misspiggie)"
 alias printers="lpstat -a"
 hash -d cs=~/Documents/School/Computer\ Sys
 hash -d repo=~/Documents/Git
 hash -d school=~/Documents/School
 hash -d trash=~/.Trash
 
+# Command functions
 cps() {
 	local printer=accepting
 	if [[ -n $1 ]]; then
@@ -31,7 +35,7 @@ cps() {
 		fi
 		printer=$1
 	fi
-	ssh -t 2015etsung@remote.tjhsst.edu "ssh -t $(gshuf -n 1 -e xilonen tlaloc teteoinnan) 'lpstat -a'" | grep $printer
+	ssh -t 2015etsung@remote.tjhsst.edu "ssh -t $(gshuf -n 1 -e xilonen tlaloc teteoinnan grover honeydew gonzo oscar misspiggie) 'lpstat -a'" | grep $printer
 }
 
 cscp() {
@@ -56,7 +60,7 @@ cpr() {
 		else
 			echo Printing to 115A.
 		fi
-		ssh -t 2015etsung@remote.tjhsst.edu "ssh -t $(gshuf -n 1 -e xilonen tlaloc teteoinnan) \"lpr -P $printer $1\""
+		ssh -t 2015etsung@remote.tjhsst.edu "ssh -t $(gshuf -n 1 -e xilonen tlaloc teteoinnan grover honeydew gonzo oscar misspiggie) \"lpr -P $printer $1\""
 	else
 		echo "usage: cpr remote_file [printer]"
 	fi
@@ -65,6 +69,7 @@ cpr() {
 csprint() {
 	local printer=115A
 	local remote_directory=Documents
+	local file_name=Error
 	if [[ -n $1 ]]; then
 		if [[ -n $2 ]]; then
 			if [[ -n $3 ]]; then
@@ -81,10 +86,13 @@ csprint() {
 			echo "Defaulting to ~/Documents"
 			echo "Printing to 115A"
 		fi
+		file_name=$1
+
 		echo "===Sending File==="
-		scp $1 2015etsung@remote.tjhsst.edu:$remote_directory
+		scp $file_name 2015etsung@remote.tjhsst.edu:$remote_directory
 		echo "=====Printing====="
-		ssh -t 2015etsung@remote.tjhsst.edu "ssh -t $(gshuf -n 1 -e xilonen tlaloc teteoinnan) \"lpr -P $3 $2/$1\""
+		file_name=${file_name//\ /\\ } # insert "\" before spaces again
+		ssh -t 2015etsung@remote.tjhsst.edu "ssh -t $(gshuf -n 1 -e xilonen tlaloc teteoinnan grover honeydew gonzo oscar misspiggie) \"lpr -P $printer $remote_directory/$file_name\""
 	else
 		echo "usage: csprint local_file [printer|remote_directory printer]"
 	fi
@@ -134,4 +142,4 @@ source $ZSH/oh-my-zsh.sh
 # source $HOME/Library/Python/2.7/lib/python/site-packages/powerline/bindings/zsh/powerline.zsh
 
 # Customize to your needs...
-export PATH=$PATH:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/Applications/adt-bundle-mac-x86_64-20131030/sdk/tools:/Applications/adt-bundle-mac-x86_64-20131030/sdk/platform-tools
+export PATH=$PATH:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:~/Library/Android/sdk/tools:~/Library/Android/sdk/platform-tools:~/.bin
