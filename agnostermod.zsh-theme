@@ -2,19 +2,21 @@
 # Forked from https://gist.github.com/smileart/3750104
 # This mod is located here: https://github.com/el1t/agnostermod/
 
-ZSH_THEME_GIT_PROMPT_DIRTY='± '
+ZSH_THEME_GIT_PROMPT_DIRTY=' ±'
 STATUSBAR_LENGTH=12	# Initialize with default number of spaces/symbols in prompt
 
 ### Segment drawing
 # A few utility functions to make it easy and re-usable to draw segmented prompts
 
 CURRENT_BG='NONE'
+MIDDLE_BG='white'
 SEGMENT_SEPARATOR='⮀'
+SEGMENT_SEPARATOR_RIGHT='⮂'
 
 # Begin a segment
 # Takes two arguments, background and foreground. Both can be omitted,
 # rendering default background/foreground.
-prompt_segment() {
+function prompt_segment() {
 	local bg fg
 	[[ -n $1 ]] && bg="%K{$1}" || bg="%k"
 	[[ -n $2 ]] && fg="%F{$2}" || fg="%f"
@@ -28,35 +30,56 @@ prompt_segment() {
 }
 
 # End the prompt, closing any open segments
-prompt_end() {
+function prompt_end() {
+	[[ -n $MIDDLE_BG ]] && MIDDLE_BG="%K{$MIDDLE_BG%}" || MIDDLE_BG="%k"
 	if [[ -n $CURRENT_BG ]]; then
-		echo -n " %{%F{$CURRENT_BG}%K{white}%}$SEGMENT_SEPARATOR"
+		echo -n " %{%F{$CURRENT_BG}$MIDDLE_BG%}$SEGMENT_SEPARATOR"
 	else
-		echo -n "%{%K{white}%}"
+		echo -n "%{$MIDDLE_BG%}"
 	fi
 	echo -n "%{%f%}"
-	CURRENT_BG=''
+}
+
+# Set the bg color for rprompt
+function prompt_start() {
+	[[ -n $MIDDLE_BG ]] && MIDDLE_BG="%K{$MIDDLE_BG%}" || MIDDLE_BG="%k"
+	echo -n "%{$MIDDLE_BG%}"
+}
+
+# Begin a segment in rprompt
+function prompt_segment_right() {
+	local bg fg bbg
+	if [[ -n $1 ]]; then
+		bg="%K{$1}"
+		bbg="%F{$1}"
+	else
+		bg="%k"
+		bbg="%f"
+	fi
+	[[ -n $2 ]] && fg="%F{$2}" || fg="%f"
+	echo -n " %{$bbg%}$SEGMENT_SEPARATOR_RIGHT%{$fg$bg%} "
+	[[ -n $3 ]] && echo -n "$3"
 }
 
 ### Prompt components
 # Each component will draw itself, and hide itself if no information needs to be shown
 
 # Status: error/root/background jobs
-prompt_status() {
+function prompt_status() {
 	local symbols
-	symbols=()
-	[[ $RETVAL -ne 0 ]] && symbols+="%{%F{red}%}✘"
+	symbols=
 	[[ $UID -eq 0 ]] && symbols+="%{%F{yellow}%}⚡"
+	[[ $RETVAL -ne 0 ]] && symbols+="%{%F{red}%}✘"
 	[[ $(jobs -l | wc -l) -gt 0 ]] && symbols+="%{%F{cyan}%}⚙"
 
 	if [[ -n "$symbols" ]];then
 		prompt_segment black default "$symbols"
-		(( STATUSBAR_LENGTH += $#symbols + 3))
+		(( STATUSBAR_LENGTH += $#symbols + 3 ))
 	fi
 }
 
 # Virtualenv: current working virtualenv
-prompt_virtualenv() {
+function prompt_virtualenv() {
 	local virtualenv_path="$VIRTUAL_ENV"
 	if [[ -n $virtualenv_path && -n $VIRTUAL_ENV_DISABLE_PROMPT ]]; then
 		local output = "(`basename $virtualenv_path`)"
@@ -68,15 +91,16 @@ prompt_virtualenv() {
 # Context: user@hostname
 function prompt_context() {
 	if [[ "$USER" != "$DEFAULT_USER" || -n "$SSH_CLIENT" ]]; then
-		prompt_segment black yellow "$USER@%m"
-		(( STATUSBAR_LENGTH += $#USER + ${#$%m} + 1 ))
+		local machine="$(print -nP %m)"
+		prompt_segment black yellow "$USER@$machine"
+		(( STATUSBAR_LENGTH += $#USER + $#machine + 1 ))
 	fi
 }
 
 # Git: branch, dirty status, commits behind/ahead of remote
 function prompt_git() {
 	if $(git rev-parse --is-inside-work-tree >/dev/null 2>&1); then
-		local ref dirty mode repo_path
+		local ref dirty mode repo_path branch icons
 		repo_path=$(git rev-parse --git-dir 2>/dev/null)
 
 		ref=$(git symbolic-ref HEAD 2> /dev/null) || ref="➦ $(git show-ref --head -s --abbrev |head -n1 2> /dev/null)"
@@ -102,36 +126,33 @@ function prompt_git() {
 			(( STATUSBAR_LENGTH += 4 ))
 		fi
 
-		local output="${ref/refs\/heads\// } $dirty$(helper_git_remote_status)${mode}"
-		echo -n $output
-		# Add length of git status, including two spaces and one arrow, to STATUSBAR_LENGTH
-		(( STATUSBAR_LENGTH += $#output + 3))
-	else
-		# (( STATUSBAR_LENGTH += 1 ))
+		branch="${ref/refs\/heads\// }"
+		icons="$dirty$(helper_git_remote_status)$mode"
+		echo -n $branch$icons
+		# Add length of git status, including a space and an arrow, to STATUSBAR_LENGTH
+		(( STATUSBAR_LENGTH += $#branch + $#icons + 2 ))
 	fi
 }
 
 # Helper function: determine commits behind/ahead of remote
 function helper_git_remote_status() {
-	if [[ -n ${$(command git rev-parse --verify ${hook_com[branch]}@{upstream} --symbolic-full-name 2>/dev/null)/refs\/remotes\/} ]]; then
-		ahead=$(command git rev-list ${hook_com[branch]}@{upstream}..HEAD 2>/dev/null | wc -l | xargs echo)
-		behind=$(command git rev-list HEAD..${hook_com[branch]}@{upstream} 2>/dev/null | wc -l | xargs echo)
+	if [[ -n ${$(command git rev-parse --verify ${hook_com[git_branch]}@{upstream} --symbolic-full-name 2>/dev/null)/refs\/remotes\/} ]]; then
+		ahead=$(command git rev-list ${hook_com[git_branch]}@{upstream}..HEAD 2>/dev/null | wc -l | xargs echo)
+		behind=$(command git rev-list HEAD..${hook_com[git_branch]}@{upstream} 2>/dev/null | wc -l | xargs echo)
 
-		if [ $behind -gt 0 ] || [ $ahead -gt 0 ]; then
-			if [ $behind -gt 0 ]; then
-				(( STATUSBAR_LENGTH += $#behind + 1))
-				echo -n "↓$behind"
-			fi
-			if [ $ahead -gt 0 ]; then
-				(( STATUSBAR_LENGTH += $#ahead + 1))
-				echo -n "↑$ahead"
-			fi
+		if [ $behind -gt 0 ]; then
+			(( STATUSBAR_LENGTH += $#behind + 2 ))
+			echo -n " ↓$behind"
+		fi
+		if [ $ahead -gt 0 ]; then
+			(( STATUSBAR_LENGTH += $#ahead + 2 ))
+			echo -n " ↑$ahead"
 		fi
 	fi
 }
 
 # Hg: ?
-prompt_hg() {
+function prompt_hg() {
 	local rev status output
 	if $(hg id >/dev/null 2>&1); then
 		if $(hg prompt >/dev/null 2>&1); then
@@ -176,15 +197,21 @@ function prompt_dir {
 	else
 		prompt_segment blue white ${(%):-%~}
 	fi
+	# ${param:-value} means use param if non-zero length, else value
+	# In this context, it should use (%) before %~
+	# ${(C)__string__} capitalizes the first character of each word, zsh style
 }
 
 # Helper function: count the spaces available for printing the working directory
 function helper_count_spacing {
-	# From the total width, subtract spaces, left-side length without working directory, time, history count
-	echo $(( ${COLUMNS} - $STATUSBAR_LENGTH - ${#$%t} - ${#$%!} ))
+	# Store substituted string of trimmed time and history count
+	local temp="$(echo $(print -nP %t%!))"
+	# From the total width, subtract spaces, left-side length without working directory, (trimmed) time + space, and history count
+	echo $(( ${COLUMNS} - $STATUSBAR_LENGTH - $#temp - 1 ))
 }
 
 function statusbar_left() {
+	RETVAL=$?
 	prompt_status
 	prompt_virtualenv
 	prompt_context
@@ -195,14 +222,15 @@ function statusbar_left() {
 }
 
 function statusbar_right() {
-	# print time
-	echo -n "%{%K{white}%F{magenta}%}⮂%{%K{magenta}%F{white}%}%t "
+	prompt_start
+	# print time, trimming leading spaces
+	prompt_segment_right magenta white "$(echo $(print -nP %t))"
 	# print history number
-	echo -n "%{%F{white}%}⮂%{%K{white}%f%} !%{%F{blue}%}%!"
+	prompt_segment_right white black "!%{%F{blue}%}%!"
 }
 
 # ${var} and $(method) are different!!
-# %b = , %f = , %k = , %K = highlight, %F = foreground text, %B = , %E = (apply formatting until) to end of line
+# %b = , %f = default foreground, %k = default background, %K = bg color, %F = fg text color, %B = , %E = (apply formatting until) end of line
 
 PROMPT='%{%f%k%b%}
 $(statusbar_left)%E
