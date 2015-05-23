@@ -5,13 +5,17 @@
 ZSH_THEME_GIT_PROMPT_DIRTY=' ±'
 STATUSBAR_LENGTH=12	# Initialize with default number of spaces/symbols in prompt
 
-### Segment drawing
-# A few utility functions to make it easy and re-usable to draw segmented prompts
-
+# Global vars/constants
 CURRENT_BG='NONE'
 MIDDLE_BG='white'
-SEGMENT_SEPARATOR='⮀'
-SEGMENT_SEPARATOR_RIGHT='⮂'
+SEGMENT_SEPARATOR=''
+SEGMENT_SEPARATOR_RIGHT=''
+SEGMENT_SEPARATOR_LIGHT=''
+SEGMENT_SEPARATOR_LIGHT_RIGHT=''
+STATUS_EVAL='%(?..%{%F{red}%}✘)'
+
+### Segment drawing
+# A few utility functions to make it easy and re-usable to draw segmented prompts
 
 # Begin a segment
 # Takes two arguments, background and foreground. Both can be omitted,
@@ -25,7 +29,7 @@ function prompt_segment() {
 			echo -n " %{$bg%F{$CURRENT_BG}%}$SEGMENT_SEPARATOR "
 		else
 			# Color 15 should be the terminal background color
-			echo -n " %{$bg%F{15}%} "
+			echo -n " %{$bg%F{15}%}$SEGMENT_SEPARATOR_LIGHT "
 		fi
 	else
 		echo -n "%{$bg%} "
@@ -66,98 +70,105 @@ function right_prompt_segment() {
 		echo -n " %{$bbg%}$SEGMENT_SEPARATOR_RIGHT%{$bg$fg%} "
 	else
 		# Color 15 should be the terminal background color
-		echo -n " %{$bg%F{15}%}%{$fg%} "
+		echo -n " %{$bg%F{15}%}$SEGMENT_SEPARATOR_LIGHT_RIGHT%{$fg%} "
 	fi
 	CURRENT_BG=$1
 	[[ -n $3 ]] && echo -n "$3"
 }
 
+# Pad background for tmux prompt manually, due to lack of %E support
+function prompt_tmux_padding() {
+	if [[ -n $TMUX ]]; then
+		echo -n "%K{white}${(l:$COLUMNS:: :)}%{$(echotc LEFT $COLUMNS)%}"
+	fi
+}
+
 ### Prompt components
 # Each component will draw itself, and hide itself if no information needs to be shown
 
-# Status: error/root/background jobs
+# Status: root/error/background jobs
 function prompt_status() {
-	local symbols
-	symbols=
-	[[ $UID -eq 0 ]] && symbols+="%{%F{yellow}%}⚡"
-	[[ $RETVAL -ne 0 ]] && symbols+="%{%F{red}%}✘"
-	[[ $(jobs -l | wc -l) -gt 0 ]] && symbols+="%{%F{cyan}%}⚙"
+	local symbols="%(#.%{%F{yellow}%}⚡.)$RETVAL"
+	[[ -n "$(jobs -l)" ]] && symbols+="%{%F{cyan}%}⚙"
+	symbols="${(%):-$symbols}"
 
-	if [[ -n "$symbols" ]]; then
-		prompt_segment black default "$symbols"
+	if [[ -n $symbols ]]; then
+		prompt_segment black default $symbols
 		(( STATUSBAR_LENGTH += $#symbols + 3 ))
 	fi
 }
 
 # Virtualenv: current working virtualenv
-function prompt_virtualenv() {
-	local virtualenv_path="$VIRTUAL_ENV"
-	if [[ -n $virtualenv_path && -n $VIRTUAL_ENV_DISABLE_PROMPT ]]; then
-		local output = "(`basename $virtualenv_path`)"
-		prompt_segment green black $output
-		(( STATUSBAR_LENGTH += $#output ))
-	fi
-}
+# function prompt_virtualenv() {
+# 	local virtualenv_path="$VIRTUAL_ENV"
+# 	if [[ -n $virtualenv_path && -n $VIRTUAL_ENV_DISABLE_PROMPT ]]; then
+# 		local output = "(`basename $virtualenv_path`)"
+# 		prompt_segment green black $output
+# 		(( STATUSBAR_LENGTH += $#output ))
+# 	fi
+# }
 
 # User: username
 function prompt_user() {
-	if [[ "$USER" != "$DEFAULT_USER" || -n "$SSH_CLIENT" ]]; then
-		prompt_segment black yellow "$USER"
+	if [[ $USER != $DEFAULT_USER || -n $SSH_CLIENT ]]; then
+		prompt_segment black yellow $USER
 		(( STATUSBAR_LENGTH += $#USER ))
 	fi
 }
 
 # Machine: machine name
 function right_prompt_machine() {
-	 if [[ -n "$SSH_CLIENT" ]]; then
-		local machine="$(print -nP %m)"
-		right_prompt_segment yellow black "@$machine"
+	 if [[ -n $SSH_CLIENT ]]; then
+		right_prompt_segment yellow black "@%m"
 	 fi
 }
 
 # Git: branch, dirty status, commits behind/ahead of remote
 function prompt_git() {
-	if [[ -n git_info && -n "${git_info[prompt]}" ]]; then
+	if [[ -n $git_info ]]; then
+		# Declaring this inside the if statement would not be local
 		local git_output="${(e)git_info[prompt]}"
-		prompt_segment "${git_info[bg]}" "${git_info[untracked]:+white}" $git_output
-		(( STATUSBAR_LENGTH += $#git_output + 2 ))
+		if [[ -n $git_output ]]; then
+			prompt_segment "${git_info[bg]}" "${git_info[untracked]:+white}" $git_output
+			(( STATUSBAR_LENGTH += $#git_output + 2 ))
+		fi
 	fi
 }
 
 function right_prompt_git() {
-	if [[ -n git_info && -n "${git_info[rprompt]}" ]]; then
-		case "${git_info[action]}" in
-			(apply)
-				right_prompt_segment white black "<A<"
-				;;
-			(bisect)
-				right_prompt_segment white black "<B>"
-				;;
-			(cherry-pick|cherry-pick-sequence)
-				right_prompt_segment white black "<C<"
-				;;
-			(merge)
-				right_prompt_segment white black ">M<"
-				;;
-			(rebase|rebase-interactive|rebase-merge)
-				right_prompt_segment white black ">R>"
-				;;
-		esac
-		right_prompt_segment white black "${git_info[rprompt]}"
+	if [[ -n $git_info ]]; then
+		local git_output="${git_info[rprompt]}"
+		if [[ -n $git_output ]]; then
+			case "${git_info[action]}" in
+				(apply)
+					right_prompt_segment white black "<A<"
+					;;
+				(bisect)
+					right_prompt_segment white black "<B>"
+					;;
+				(cherry-pick|cherry-pick-sequence)
+					right_prompt_segment white black "<C<"
+					;;
+				(merge)
+					right_prompt_segment white black ">M<"
+					;;
+				(rebase|rebase-interactive|rebase-merge)
+					right_prompt_segment white black ">R>"
+					;;
+			esac
+			right_prompt_segment white black $git_output
+		fi
 	fi
 }
 
 # Dir: current working directory, shortens if longer than available space
 function prompt_dir {
-	local directory="${(%):-%~}"
-	# Current working directory contains hashed portion
-	if [[ $directory != "${(%):-%d}" ]]; then
-		local hashed_directory="${${directory%%/*}[2,-1]}"
-		prompt_segment blue white $hashed_directory
-		(( STATUSBAR_LENGTH += $#hashed_directory + 2 ))
-		# Replace directory with empty string if at base of hashed directory, else eliminate hashed portion
-		directory="${${directory:#^*/*}:+${directory#*/}}"
-	fi
+	local directory="${${(%):-%~}[2,-1]}"
+	local hashed_directory="${${directory%%/*}:-${${(%):-%~}[1]}}"
+	prompt_segment blue white $hashed_directory
+	(( STATUSBAR_LENGTH += $#hashed_directory + 2 ))
+	# Replace directory with empty string if at base of hashed directory, else eliminate hashed portion
+	directory="${${directory:#^*/*}:+${directory#*/}}"
 	if [[ -n $directory ]]; then
 		local termwidth=$(helper_count_spacing)
 		if [[ $#directory -gt $termwidth ]]; then
@@ -176,28 +187,30 @@ function helper_count_spacing {
 	# Returns exit code 0 if $SSH_TTY exists
 	[[ -n $SSH_TTY ]]
 	# Store substituted string of trimmed time, history count, and machine name depending on previous exit code
-	local temp="$(echo $(print -nP '%t%!%(?.⮂ @%m .)'))"
+	local temp="${${(%):-%t%!%(?.⮂ @%m .)}## }"
 	# From the total width, subtract spaces, left-side length without working directory, (trimmed) time + space, and history count
-	echo $(( ${COLUMNS} - $STATUSBAR_LENGTH - $#temp - 1 ))
+	echo $(( $COLUMNS - $STATUSBAR_LENGTH - $#temp - 1 ))
 }
 
 function statusbar_left() {
-	RETVAL=$?
+	RETVAL="${(%):-$STATUS_EVAL}"
 	CURRENT_BG='NONE'
+	prompt_tmux_padding
 	prompt_status
-	prompt_virtualenv
+	# prompt_virtualenv
 	prompt_user
 	prompt_git
-	# prompt_hg
 	prompt_dir
 	prompt_end
+	# Clear to EOL if not in tmux
+	[[ -z $TMUX ]] && echo -n "%E"
 }
 
 function statusbar_right() {
 	prompt_start
 	right_prompt_git
 	# print time, trimming leading spaces
-	right_prompt_segment magenta white "$(echo $(print -nP %t))"
+	right_prompt_segment magenta white "${${(%):-%t}## }"
 	# print history number
 	right_prompt_segment white black "!%{%F{blue}%}%!"
 	right_prompt_machine
@@ -211,26 +224,28 @@ function prompt_style() {
 
 	zstyle ':prezto:module:git:info' verbose 'yes'
 	zstyle ':prezto:module:git:info:action' format '%s'
-	zstyle ':prezto:module:git:info:added' format '%F{green}✚%f%%b'
+	zstyle ':prezto:module:git:info:added' format '%F{green}✚%f'
 	zstyle ':prezto:module:git:info:ahead' format '%F{yellow}↑%A%f'
 	zstyle ':prezto:module:git:info:behind' format '%F{yellow}↓%B%f'
 	zstyle ':prezto:module:git:info:branch' format ' %b'
 	zstyle ':prezto:module:git:info:commit' format '%.7c'
-	zstyle ':prezto:module:git:info:deleted' format '%F{red}✖%f%'
+	zstyle ':prezto:module:git:info:deleted' format '%F{red}✖%f'
 	zstyle ':prezto:module:git:info:modified' format 'yellow'
 	zstyle ':prezto:module:git:info:position' format ':%p'
-	zstyle ':prezto:module:git:info:renamed' format '%F{magenta}➜%f'
-	zstyle ':prezto:module:git:info:stashed' format '%F{9}✭%f'
-	zstyle ':prezto:module:git:info:unmerged' format '%F{yellow}═%f'
+	zstyle ':prezto:module:git:info:renamed' format '%F{9}➜%f'
+	zstyle ':prezto:module:git:info:stashed' format '%F{cyan}§%f'
+	zstyle ':prezto:module:git:info:unmerged' format '%F{yellow}₥%f'
 	zstyle ':prezto:module:git:info:untracked' format 'red'
 	zstyle ':prezto:module:git:info:keys' format \
 		'prompt' '$(coalesce "%b" "%p" "%c")%s' \
 		'rprompt' '%A%B%S%a%d%r%U' \
-		'bg' '$(coalesce "%u" "%m" "green")'
+		'bg' '$(coalesce "%u" "%m" "green")' \
+		'untracked' '%u'
 }
 
 # ${var} and $(method) are different!!
-# %b = , %f = default foreground, %k = default background, %K = bg color, %F = fg text color, %B = , %E = (apply formatting until) end of line
+# %b = , %f = default foreground, %k = default background
+# %B = , %F = fg (text) color, %K = bg color, %E = clear to end of line
 
 ## Main prompt
 function prompt_agnostermod_precmd() {
@@ -245,14 +260,13 @@ function prompt_agnostermod_setup() {
 	prompt_opts=(cr percent subst)
 
 	autoload -Uz add-zsh-hook
-
 	add-zsh-hook precmd prompt_agnostermod_precmd
 
 	prompt_style
 
 	# Set primary prompt
 	PROMPT='%{%f%k%b%}
-$(statusbar_left)%E
+$(statusbar_left)
 %{%F{blue}%K{white}%}❯%{%k%F{white}%}$SEGMENT_SEPARATOR%{%f%b%}'
 	RPROMPT='%{$(echotc UP 1)%}$(statusbar_right)%{$(echotc DO 1)%}'
 
