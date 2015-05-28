@@ -3,6 +3,8 @@ Statusline
 
 ###A Powerline theme for prezto and oh-my-zsh
 
+![Screenshot](screenshot.png)
+
 See the themes "agnoster" and "paradox" for comparison. This theme requires the powerline-patched menlo font, included [here.](MenloforPowerline-Regular.otf) You can find the dotfiles I use [here.](../dotfiles) Statusline is designed for solarized, and is compatible with the default OS X Terminal.app. The prezto version is up to date; however, the oh-my-zsh version may not receive further updates.
 
 ####[Prezto](https://github.com/sorin-ionescu/prezto)
@@ -13,7 +15,7 @@ The [prezto version](prompt_statusline_setup) is more optimized for zsh than the
 - Task runtime
 - Contextual segments
 - Modular design (add and remove segments easily)
-- Custom PS1, RPS1, PS2, RPS2, PS3, PS4, SPROMPT, and completion formatting
+- Custom `PS1`, `RPS1`, `PS2`, `RPS2`, `PS3`, `PS4`, `SPROMPT`, and completion formatting
 - Tmux support
 
 #####Installation
