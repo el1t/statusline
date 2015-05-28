@@ -1,6 +1,6 @@
-# Original theme agnoster, in oh-my-zsh (https://github.com/robbyrussell/oh-my-zsh)
-# Forked from https://gist.github.com/smileart/3750104
-# This mod is located here: https://github.com/el1t/agnostermod/
+# Original theme from agnoster (https://gist.github.com/smileart/3750104)
+# This theme is located at https://github.com/el1t/statusline
+# Designed for oh-my-zsh
 
 ZSH_THEME_GIT_PROMPT_DIRTY=' ±'
 STATUSBAR_LENGTH=12	# Initialize with default number of spaces/symbols in prompt

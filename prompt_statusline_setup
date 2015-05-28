@@ -1,0 +1,401 @@
+# Original theme agnoster, in oh-my-zsh (https://github.com/robbyrussell/oh-my-zsh)
+# Forked from https://gist.github.com/smileart/3750104
+# Async support from sorin's prompt in prezto
+# Prompt format from http://github.com/sykora/etc/blob/master/zsh/functions/spectrum/
+# This mod is located here: https://github.com/el1t/statusline/
+
+# =======Colors========
+# Norm | Bold | Color (Solarized)
+# =====================
+#   0  |  8   | Black (Base3)
+#   1  |  9   | Red (Orange)
+#   2  |  10  | Green
+#   3  |  11  | Yellow
+#   4  |  12  | Blue
+#   5  |  13  | Magenta (Purple)
+#   6  |  14  | Cyan
+#   7  |  15  | White
+
+# Load dependencies
+pmodload 'helper'
+
+STATUSBAR_LENGTH=12	# Initialize with default number of spaces/symbols in prompt
+
+# Global vars/constants
+_prompt_statusline_current_bg=
+_prompt_statusline_middle_bg='7'
+typeset -rg _prompt_statusline_separator=''
+typeset -rg _prompt_statusline_separator_right=''
+typeset -rg _prompt_statusline_separator_light=''
+typeset -rg _prompt_statusline_separator_light_right=''
+_prompt_statusline_elapsed_time=
+_prompt_statusline_git=
+
+### Segment drawing
+# A few utility functions to make it easy and re-usable to draw segmented prompts
+
+# Begin a segment
+# Takes two arguments, background and foreground. Both can be omitted,
+# rendering default background/foreground.
+function prompt_segment() {
+	local bg fg
+	[[ -n $1 ]] && bg="%K{$1}" || bg="%k"
+	[[ -n $2 ]] && fg="%F{$2}" || fg="%f"
+	if [[ -n $_prompt_statusline_current_bg ]]; then
+		if [[ $1 != $_prompt_statusline_current_bg ]]; then
+			echo -n " $bg%F{$_prompt_statusline_current_bg}$_prompt_statusline_separator "
+		else
+			# Color 15 should be the terminal background color
+			echo -n " $bg%F{15}$_prompt_statusline_separator_light "
+		fi
+	else
+		echo -n "$bg "
+	fi
+	_prompt_statusline_current_bg=$1
+	echo -n "$fg"
+	[[ -n $3 ]] && echo -n "$3"
+}
+
+# End the prompt, closing any open segments
+function prompt_end() {
+	[[ -n $_prompt_statusline_middle_bg ]] && _prompt_statusline_middle_bg="%K{$_prompt_statusline_middle_bg}" || _prompt_statusline_middle_bg="%k"
+	if [[ -n $_prompt_statusline_current_bg ]]; then
+		echo -n " %F{$_prompt_statusline_current_bg}$_prompt_statusline_middle_bg$_prompt_statusline_separator"
+	else
+		echo -n "$_prompt_statusline_middle_bg"
+	fi
+	echo -n "%f"
+}
+
+# Set the bg color for rprompt
+function prompt_start() {
+	echo -n "${${_prompt_statusline_middle_bg:+%K{$_prompt_statusline_middle_bg}}:-%k}"
+	_prompt_statusline_current_bg=$_prompt_statusline_middle_bg
+}
+
+# Begin a segment in rprompt
+function right_prompt_segment() {
+	local bg fg bbg
+	if [[ -n $1 ]]; then
+		bg="%K{$1}"
+		bbg="%F{$1}"
+	else
+		bg="%k"
+		bbg="%f"
+	fi
+	[[ -n $2 ]] && fg="%F{$2}" || fg="%f"
+	if [[ $1 != $_prompt_statusline_current_bg ]]; then
+		echo -n " $bbg$_prompt_statusline_separator_right$bg$fg "
+	else
+		# Color 15 should be the terminal background color
+		echo -n " $bg%F{15}$_prompt_statusline_separator_light_right$fg "
+	fi
+	_prompt_statusline_current_bg=$1
+	[[ -n $3 ]] && echo -n "$3"
+}
+
+# Pad background for tmux prompt manually, due to lack of %E support
+function prompt_tmux_padding() {
+	if [[ -n $TMUX ]]; then
+		echo -n "%K{7}${(l:$COLUMNS:: :)}%{$(echotc LEFT $COLUMNS)%}"
+	fi
+}
+
+# Display a diamond prompt, centered
+function center_prompt() {
+	local length=$(( COLUMNS / 2 - $#3 / 2 - 4 / 2 ))
+	[[ -n $4 ]] && echo -n "%K{$4}"
+	# Pad spaces
+	echo -n "${(l:$length:: :)}$(diamond_prompt $1 $2 $3 $4)"
+}
+
+#  Sample output 
+function diamond_prompt() {
+	local padding_color=$4
+	[[ -z $4 ]] && padding_color=15
+	echo -n "%F{$1}%K{$padding_color}$_prompt_statusline_separator_right%F{$2}%K{$1} $3 %F{$1}%K{$padding_color}$_prompt_statusline_separator%f%E%k"
+}
+
+### Prompt components
+# Each component will draw itself, and hide itself if no information needs to be shown
+
+# Status: root/error/background jobs
+function prompt_status() {
+	local symbols="%(#.%F{3}⚡.)"
+	(( $1 != 0 )) && symbols+="%F{1}✘"
+	[[ -n $(jobs -l) ]] && symbols+="%F{6}⚙"
+	symbols="${(%):-$symbols}"
+
+	if [[ -n $symbols ]]; then
+		prompt_segment 0 default $symbols
+		(( STATUSBAR_LENGTH += $#symbols + 3 ))
+	fi
+}
+
+# User: username
+function prompt_user() {
+	if [[ $USER != $DEFAULT_USER || -n $SSH_CLIENT ]]; then
+		prompt_segment 0 3 $USER
+		(( STATUSBAR_LENGTH += $#USER ))
+	fi
+}
+
+# Machine: machine name
+function right_prompt_machine() {
+	 if [[ -n $SSH_CLIENT ]]; then
+		right_prompt_segment 3 0 "@%m"
+	 fi
+}
+
+# Git: branch, dirty status, commits behind/ahead of remote
+function prompt_git() {
+	# If async has finished
+	if (( _prompt_statusline_precmd_async_pid == 0 )); then
+		# Declaring this inside the if statement would not be local
+		local git_output="${(e)git_info[prompt]}"
+		if [[ -n $git_output ]]; then
+			prompt_segment "${git_info[bg]}" "${git_info[untracked]:+7}" $git_output
+			(( STATUSBAR_LENGTH += $#git_output + 2 ))
+		fi
+	else
+		# Display placeholder for async, gray color
+		prompt_segment 14 0 " ...   "
+		# Add extra padding in case statuses are present
+		(( STATUSBAR_LENGTH += 8 + 2 + 5))
+	fi
+}
+
+# Git: format action, output other statuses defined in git_info[rprompt]
+function right_prompt_git() {
+	# If async has finished
+	if (( _prompt_statusline_precmd_async_pid == 0 )); then
+		local git_output="${git_info[rprompt]}"
+		if [[ -n $git_output ]]; then
+			case "${git_info[action]}" in
+				(apply)
+					right_prompt_segment 7 0 "<A<"
+					;;
+				(bisect)
+					right_prompt_segment 7 0 "<B>"
+					;;
+				(cherry-pick|cherry-pick-sequence)
+					right_prompt_segment 7 0 "<C<"
+					;;
+				(merge)
+					right_prompt_segment 7 0 ">M<"
+					;;
+				(rebase|rebase-interactive|rebase-merge)
+					right_prompt_segment 7 0 ">R>"
+					;;
+			esac
+			right_prompt_segment 7 0 $git_output
+		fi
+	fi
+}
+
+# Output runtime of previous task
+function prompt_elapsed_time() {
+	if [[ -n $_prompt_statusline_start_time ]]; then
+		local end_time=$(( SECONDS - _prompt_statusline_start_time ))
+		if (( end_time >= 10 )); then
+			local output
+			if (( end_time >= 60 )); then
+				if (( end_time >= 3600 )); then
+					output="$(( end_time / 3600 ))h "
+					end_time=$(( end_time % 3600 ))
+				fi
+				output=$output"$(( end_time / 60 ))m "
+				end_time=$(( end_time % 60 ))
+			fi
+			output=$output"${end_time}s"
+			echo
+			print -P "$(center_prompt 13 7 $output 7)"
+		fi
+		unset _prompt_statusline_start_time
+	fi
+}
+
+# Dir: current working directory, shortens if longer than available space
+function prompt_dir {
+	local directory="${${(%):-%~}}"
+	local hashed_directory="${${directory[2,-1]%%/*}:-$directory[1]}"
+	prompt_segment 4 7 $hashed_directory
+	(( STATUSBAR_LENGTH += $#hashed_directory + 2 ))
+	# Replace directory with empty string if at base of hashed directory, else eliminate hashed portion
+	directory="${${directory:#^?*/*}:+${directory#?*/}}"
+	if [[ -n $directory ]]; then
+		local termwidth=$(prompt_helper_count_spacing)
+		prompt_segment 4 7 "%$termwidth<…<$directory"
+	fi
+	# ${param:-value} means use param if non-zero length, else value
+	# (%) means expand % params
+	# ${(C)__string__} capitalizes the first character of each word, zsh style
+}
+
+# Helper function: count the spaces available for printing the working directory
+function prompt_helper_count_spacing {
+	# Returns exit code 0 if $SSH_TTY exists
+	[[ -n $SSH_TTY ]]
+	# Store substituted string of trimmed time, history count, and machine name depending on previous exit code
+	local temp="${${(%):-%t%!%(?.⮂ @%m .)}## }"
+	# From the total width, subtract spaces, left-side length without working directory, (trimmed) time + space, and history count
+	echo $(( COLUMNS - STATUSBAR_LENGTH - $#temp - 1 ))
+}
+
+function statusbar_left() {
+	local retval=$?
+	_prompt_statusline_current_bg=
+	prompt_tmux_padding
+	prompt_status $retval
+	prompt_user
+	[[ -n $_prompt_statusline_git ]] && prompt_git
+	prompt_dir
+	prompt_end
+	# Clear to EOL if not in tmux
+	[[ -z $TMUX ]] && echo -n "%E"
+}
+
+function statusbar_right() {
+	prompt_start
+	[[ -n $_prompt_statusline_git ]] && right_prompt_git
+	# print time, trimming leading spaces
+	right_prompt_segment 5 7 "${${(%):-%t}## }"
+	# print history number
+	right_prompt_segment 7 0 "!%F{4}%!"
+	right_prompt_machine
+}
+
+function prompt_style() {
+	# Completion styling
+	zstyle ':completion:*:corrections' format "$(diamond_prompt 2 0 '%d (errors: %e)')"
+	zstyle ':completion:*:descriptions' format "$(diamond_prompt 3 0 '%d')"
+	zstyle ':completion:*:messages' format ' %F{purple} -- %d --%f'
+	zstyle ':completion:*:warnings' format "$(center_prompt 1 7 'No matches found')"
+	zstyle ':completion:*:default' list-prompt '%S%M matches%s'
+	zstyle ':completion:*' format "$(diamond_prompt 3 0 %d)"
+
+	# Editor styling
+	zstyle ':prezto:module:editor:info:completing' format '%B%F{1}...%f%b'
+	zstyle ':prezto:module:editor:info:keymap:primary' format '%F{4}%K{7}❯%k%F{7}%f%b'
+	zstyle ':prezto:module:editor:info:keymap:primary:overwrite' format ' %F{1}♺%f'
+	zstyle ':prezto:module:editor:info:keymap:alternate' format '%F{9}%K{7}❯%k%F{7}%f%b'
+
+	# Git-info styling
+	zstyle ':prezto:module:git:info' verbose 'yes'
+	zstyle ':prezto:module:git:info:action' format '%s'
+	zstyle ':prezto:module:git:info:added' format '%F{2}✚%f'
+	zstyle ':prezto:module:git:info:ahead' format '%F{3}↑%A%f'
+	zstyle ':prezto:module:git:info:behind' format '%F{3}↓%B%f'
+	zstyle ':prezto:module:git:info:branch' format ' %b'
+	zstyle ':prezto:module:git:info:commit' format '%.7c'
+	zstyle ':prezto:module:git:info:deleted' format '%F{1}✖%f'
+	zstyle ':prezto:module:git:info:modified' format '3'
+	zstyle ':prezto:module:git:info:position' format ':%p'
+	zstyle ':prezto:module:git:info:renamed' format '%F{9}➜%f'
+	zstyle ':prezto:module:git:info:stashed' format '%F{6}§%f'
+	zstyle ':prezto:module:git:info:unmerged' format '%F{3}₥%f'
+	zstyle ':prezto:module:git:info:untracked' format '1'
+	zstyle ':prezto:module:git:info:keys' format \
+		'prompt' '$(coalesce "%b" "%p" "%c")%s' \
+		'rprompt' '%A%B%S%a%d%r%U' \
+		'bg' '$(coalesce "%u" "%m" "2")' \
+		'untracked' '%u'
+}
+
+# %u = remove underline, %b = unbold, %f = default foreground, %k = default background
+# %U = underline, %B = bold, %F = fg (text) color, %K = bg color, %E = clear to end of line
+
+
+## Prezto setup functions
+function prompt_statusline_precmd_async {
+	# Get Git repository information.
+	if (( $+functions[git-info] )); then
+		git-info
+		typeset -p git_info >! "$_prompt_statusline_precmd_async_data"
+	fi
+
+	# Signal completion to parent process.
+	kill -USR1 $$
+}
+
+function prompt_statusline_git_info {
+	# Append Git status.
+	if [[ -s "$_prompt_statusline_precmd_async_data" ]]; then
+		alias typeset='typeset -g'
+		source "$_prompt_statusline_precmd_async_data"
+		unalias typeset
+	fi
+
+	# Reset PID.
+	_prompt_statusline_precmd_async_pid=0
+
+	# Display prompt.
+	zle && zle reset-prompt
+}
+
+function prompt_statusline_precmd {
+	setopt LOCAL_OPTIONS
+	unsetopt XTRACE KSH_ARRAYS
+
+	# Check previous task runtime
+	prompt_elapsed_time
+
+	# Kill the old process of slow commands if it is still running.
+	if (( _prompt_statusline_precmd_async_pid > 0 )); then
+		kill -TERM "$_prompt_statusline_precmd_async_pid" &>/dev/null
+	fi
+
+	# Split off async task to check git status if in git repo
+	if $(git rev-parse --is-inside-work-tree 2> /dev/null); then
+		_prompt_statusline_git=1
+		# Compute slow commands in the background.
+		trap prompt_statusline_git_info USR1
+		prompt_statusline_precmd_async &!
+		_prompt_statusline_precmd_async_pid=$!
+	else
+		unset _prompt_statusline_git
+	fi
+}
+
+function prompt_statusline_preexec {
+	_prompt_statusline_start_time=$SECONDS
+}
+
+function prompt_statusline_setup() {
+	setopt LOCAL_OPTIONS
+	unsetopt XTRACE KSH_ARRAYS
+	prompt_opts=(cr percent subst)
+	_prompt_statusline_precmd_async_pid=0
+	_prompt_statusline_precmd_async_data="${TMPPREFIX}-prompt_statusline_data"
+
+	# Load required functions
+	autoload -Uz add-zsh-hook
+
+	# Add hooks
+	add-zsh-hook preexec prompt_statusline_preexec
+	add-zsh-hook precmd prompt_statusline_precmd
+
+	prompt_style
+
+	# Set primary prompt
+	PROMPT='$(print $FX[none])
+$(statusbar_left)
+$editor_info[keymap]'
+	RPROMPT='%{$(echotc UP 1)%}$(statusbar_right)%{$(echotc DO 1)%}'
+
+	# Secondary prompt, printed when the shell needs more information to complete a command
+	PS2='%F{6}%K{7}❯%k%F{7}$_prompt_statusline_separator%f%b'
+	RPS2='%k%F{7}$_prompt_statusline_separator_right%F{6}%K{7} %_%E'
+
+	# Selection prompt used within a select loop
+	PS3='%F{13}%K{7} Select: %F{7}%k⮀%f '
+
+	# Execution trace prompt
+	# setopt xtrace # disable with unsetopt xtrace
+	PS4='%K{7} %F{2}%N%f:%F{4}%i %F{7}%k⮀%f '
+
+	# Spelling prompt used to correct spelling errors
+	SPROMPT='%K{9}%F{7} Correction: %F{9}%K{15}⮀%k%f change %B%F{1}%R%b%f to %B%F{2}%r%b%f [%Unyae%u]? '
+}
+
+prompt_statusline_setup "$@"
