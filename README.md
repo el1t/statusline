@@ -21,7 +21,7 @@ The [prezto version](prompt_statusline_setup) is more optimized for zsh than the
 #####Installation
 Move `prompt_statusline_setup` to your prezto installation folder (typically `~/.zprezto`), inside `modules/prompt/functions`.
 In `zpreztorc`, ensure the following plugins are enabled:
-```
+```zsh
 zstyle ':prezto:load' pmodule \
 	'environment' \
 	'terminal' \
