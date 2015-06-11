@@ -1,5 +1,8 @@
-# Original theme agnoster, in oh-my-zsh (https://github.com/robbyrussell/oh-my-zsh)
+# 
+# A two-line, context-aware theme styled after powerline.
+# Originalally ported from agnoster, in oh-my-zsh (https://github.com/robbyrussell/oh-my-zsh)
 # Async support from sorin's prompt in prezto
+# 
 # Authors:
 #   Ellis Tsung (github.com/el1t)
 
@@ -83,12 +86,12 @@ function right_prompt_segment {
 	fi
 	[[ -n $2 ]] && fg="%F{$2}" || fg="%f"
 	if [[ $1 != $_prompt_statusline_current_bg ]]; then
-		echo -n " $bbg$_prompt_statusline_separator_right$bg$fg "
+		echo -n "$bbg$_prompt_statusline_separator_right$bg$fg "
 	else
-		echo -n " $bg%F{$_prompt_statusline_bg[2]}$_prompt_statusline_separator_light_right$fg "
+		echo -n "$bg%F{$_prompt_statusline_bg[2]}$_prompt_statusline_separator_light_right$fg "
 	fi
 	_prompt_statusline_current_bg=$1
-	[[ -n $3 ]] && echo -n $3
+	[[ -n $3 ]] && echo -n "$3 "
 }
 
 # Pad background for tmux prompt manually, due to lack of %E support
@@ -428,7 +431,7 @@ function prompt_statusline_setup {
 	PROMPT='$(print $FX[none])
 $(statusbar_left)
 $editor_info[keymap]'
-	RPROMPT='%{$(echotc UP 1)%}$(statusbar_right)%{$(echotc DO 1)%}'
+	RPROMPT='%{$terminfo[cuu1]$terminfo[cuf1]%}$(statusbar_right)%{$(echotc DO 1)%}'
 
 	# Secondary prompt, printed when the shell needs more information to complete a command
 	PS2='%F{6}%K{$_prompt_statusline_bg[1]}❯%k%F{$_prompt_statusline_bg[1]}$_prompt_statusline_separator%f'
