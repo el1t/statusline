@@ -139,7 +139,7 @@ function prompt_user {
 
 # Machine: machine name
 function right_prompt_machine {
-	if [[ -n $SSH_CLIENT ]]; then
+	if [[ -n $SSH_CLIENT || -n $SSH_TTY ]]; then
 		right_prompt_segment 3 0 "@%m"
 	fi
 }
@@ -221,7 +221,24 @@ function prompt_dir {
 	# Replace directory with empty string if at base of hashed directory, else eliminate hashed portion
 	directory="${${directory:#^?*/*}:+${directory#?*/}}"
 	if [[ -n $directory ]]; then
-		prompt_segment 4 7 "%$(prompt_helper_count_spacing)<…<$directory%<<"
+		local spacing=$(prompt_helper_count_spacing)
+		local length=$#directory
+		if (( length < spacing )); then
+			prompt_segment 4 7 $directory
+		else
+			# Shorten path as much as necessary
+			local dir_segment
+			prompt_segment 4 7
+			for dir_segment in ${(@s:/:)directory:h}; do
+				if (( length > spacing )); then
+					echo -n $dir_segment[1]/
+					(( length -= $#dir_segment - 1 ))
+				else
+					echo -n $dir_segment/
+				fi
+			done
+			echo -n ${directory:t}
+		fi
 	fi
 	# ${param:-value} means use param if non-zero length, else value
 	# (%) means expand % params
@@ -230,8 +247,8 @@ function prompt_dir {
 
 # Helper function: count the spaces available for printing the working directory
 function prompt_helper_count_spacing {
-	# Returns exit code 0 if $SSH_TTY exists
-	[[ -n $SSH_TTY ]]
+	# Returns exit code 0 if in SSH
+	[[ -n $SSH_CLIENT || -n $SSH_TTY ]]
 	# Store substituted string of trimmed time, history count, and machine name depending on previous exit code
 	local temp="${${(%):-%t%!%(?.⮂ @%m .)}## }"
 	# From the total width, subtract spaces, left-side length without working directory, (trimmed) time + space, and history count
@@ -374,7 +391,7 @@ where the color1 is %Blight%b or %Bdark%b, and color2 is the statusbar backgroun
 Solarized light with a white statusbar is the default style."
 }
 
-function prompt_name_preview {
+function prompt_statusline_preview {
 	if (( $# > 0 )); then
 		prompt_preview_theme statusline "$@"
 	else
