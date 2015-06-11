@@ -335,22 +335,21 @@ function prompt_statusline_precmd_async {
 	fi
 
 	# Signal completion to parent process.
-	kill -USR1 $$
+	kill -WINCH $$
 }
 
 function prompt_statusline_git_info {
 	# Append Git status.
-	if [[ -s $_prompt_statusline_precmd_async_data ]]; then
+	if (( _prompt_statusline_precmd_async_pid > 0 )); then
 		alias typeset='typeset -g'
 		source $_prompt_statusline_precmd_async_data
 		unalias typeset
+		# Reset PID.
+		_prompt_statusline_precmd_async_pid=0
+
+		# Display prompt.
+		zle && zle reset-prompt
 	fi
-
-	# Reset PID.
-	_prompt_statusline_precmd_async_pid=0
-
-	# Display prompt.
-	zle && zle reset-prompt
 }
 
 function prompt_statusline_precmd {
@@ -362,14 +361,14 @@ function prompt_statusline_precmd {
 
 	# Kill the old process of slow commands if it is still running.
 	if (( _prompt_statusline_precmd_async_pid > 0 )); then
-		kill -TERM $_prompt_statusline_precmd_async_pid &>/dev/null
+		kill -KILL $_prompt_statusline_precmd_async_pid &>/dev/null
 	fi
 
 	# Split off async task to check git status if in git repo
 	if $(git rev-parse --is-inside-work-tree 2> /dev/null); then
 		_prompt_statusline_git=1
 		# Compute slow commands in the background.
-		trap prompt_statusline_git_info USR1
+		trap prompt_statusline_git_info WINCH
 		prompt_statusline_precmd_async &!
 		_prompt_statusline_precmd_async_pid=$!
 	else
@@ -395,6 +394,17 @@ Solarized light with a white statusbar is the default style."
 }
 
 function prompt_statusline_preview {
+	# Prevent changes from affecting default prompt
+	local +h PROMPT=''
+	local +h RPROMPT=''
+	local +h PS2=''
+	local +h RPS2=''
+	local +h PS3=''
+	local +h PS4=''
+	local +h SPROMPT=''
+
+	editor-info 2>/dev/null
+
 	if (( $# > 0 )); then
 		prompt_preview_theme statusline "$@"
 	else
