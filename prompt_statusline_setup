@@ -221,8 +221,7 @@ function prompt_dir {
 	# Replace directory with empty string if at base of hashed directory, else eliminate hashed portion
 	directory="${${directory:#^?*/*}:+${directory#?*/}}"
 	if [[ -n $directory ]]; then
-		local termwidth=$(prompt_helper_count_spacing)
-		prompt_segment 4 7 "%$termwidth<…<$directory"
+		prompt_segment 4 7 "%$(prompt_helper_count_spacing)<…<$directory%<<"
 	fi
 	# ${param:-value} means use param if non-zero length, else value
 	# (%) means expand % params
@@ -419,14 +418,14 @@ $editor_info[keymap]'
 	RPS2='%k%F{$_prompt_statusline_bg[1]}$_prompt_statusline_separator_right%F{6}%K{$_prompt_statusline_bg[1]} %_%E'
 
 	# Selection prompt used within a select loop
-	PS3='%F{13}%K{$_prompt_statusline_bg[1]} Select: %F{$_prompt_statusline_bg[1]}%k$_prompt_statusline_separator%f '
+	PS3='%F{13}%K{7} Select: %F{$_prompt_statusline_bg[1]}%k$_prompt_statusline_separator%f '
 
 	# Execution trace prompt
 	# setopt xtrace # disable with unsetopt xtrace
 	PS4='%K{$_prompt_statusline_bg[1]} %F{2}%N%f:%F{4}%i %F{$_prompt_statusline_bg[1]}%k$_prompt_statusline_separator%f '
 
 	# Spelling prompt used to correct spelling errors
-	SPROMPT='%K{9}%F{$_prompt_statusline_bg[1]} Correction: %F{9}%K{$_prompt_statusline_bg[2]}$_prompt_statusline_separator%k%f change %B%F{1}%R%b%f to %B%F{2}%r%b%f [%Unyae%u]? '
+	SPROMPT='%K{9}%F{7} Correction: %F{9}%K{$_prompt_statusline_bg[2]}$_prompt_statusline_separator%k%f change %B%F{1}%R%b%f to %B%F{2}%r%b%f [%Unyae%u]? '
 }
 
 prompt_statusline_setup "$@"

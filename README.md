@@ -42,7 +42,7 @@ Also in `zpreztorc`, change the theme setting as follows:
 ```zsh
 zstyle ':prezto:module:prompt' theme 'statusline'            # Default light theme
 zstyle ':prezto:module:prompt' theme 'statusline' 'dark'     # Solarized dark theme
-zstyle ':prezto:module:prompt' theme 'statusline' 'light ''  # Light with transparent statusbar
+zstyle ':prezto:module:prompt' theme 'statusline' 'light' ''  # Light with transparent statusbar
 ```
 Last but not least, ensure that this custom [patched font](MenloforPowerline-Regular.otf) is installed and enabled in your terminal.
 Happy theming!
