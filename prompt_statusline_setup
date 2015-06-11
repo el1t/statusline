@@ -22,13 +22,13 @@ pmodload 'helper'
 _prompt_statusline_length=12	# Default number of spaces/symbols in prompt
 _prompt_statusline_current_bg=
 _prompt_statusline_bg=(7 15)
-_prompt_statusline_middle_bg='7'
+_prompt_statusline_middle_bg=7
+_prompt_statusline_elapsed_time=
+_prompt_statusline_git=
 typeset -rg _prompt_statusline_separator=''
 typeset -rg _prompt_statusline_separator_right=''
 typeset -rg _prompt_statusline_separator_light=''
 typeset -rg _prompt_statusline_separator_light_right=''
-_prompt_statusline_elapsed_time=
-_prompt_statusline_git=
 
 ### Segment drawing
 # A few utility functions to make it easy and re-usable to draw segmented prompts
@@ -50,8 +50,8 @@ function prompt_segment {
 		echo -n "$bg "
 	fi
 	_prompt_statusline_current_bg=$1
-	echo -n "$fg"
-	[[ -n $3 ]] && echo -n "$3"
+	echo -n $fg
+	[[ -n $3 ]] && echo -n $3
 }
 
 # End the prompt, closing any open segments
@@ -60,7 +60,7 @@ function prompt_end {
 	if [[ -n $_prompt_statusline_current_bg ]]; then
 		echo -n " %F{$_prompt_statusline_current_bg}$_prompt_statusline_middle_bg$_prompt_statusline_separator"
 	else
-		echo -n "$_prompt_statusline_middle_bg"
+		echo -n $_prompt_statusline_middle_bg
 	fi
 	echo -n "%f"
 }
@@ -88,7 +88,7 @@ function right_prompt_segment {
 		echo -n " $bg%F{$_prompt_statusline_bg[2]}$_prompt_statusline_separator_light_right$fg "
 	fi
 	_prompt_statusline_current_bg=$1
-	[[ -n $3 ]] && echo -n "$3"
+	[[ -n $3 ]] && echo -n $3
 }
 
 # Pad background for tmux prompt manually, due to lack of %E support
@@ -151,7 +151,7 @@ function prompt_git {
 		# Declaring this inside the if statement would not be local
 		local git_output="${(e)git_info[prompt]}"
 		if [[ -n $git_output ]]; then
-			prompt_segment "${git_info[bg]}" "${git_info[untracked]:+7}" $git_output
+			prompt_segment $git_info[bg] 7 $git_output
 			(( _prompt_statusline_length += $#git_output + 2 ))
 		fi
 	else
@@ -166,9 +166,9 @@ function prompt_git {
 function right_prompt_git {
 	# If async has finished
 	if (( _prompt_statusline_precmd_async_pid == 0 )); then
-		local git_output="${git_info[rprompt]}"
+		local git_output=$git_info[rprompt]
 		if [[ -n $git_output ]]; then
-			case "${git_info[action]}" in
+			case $git_info[action] in
 				(apply)
 					right_prompt_segment $_prompt_statusline_bg[1] '' "<A<"
 					;;
@@ -231,13 +231,13 @@ function prompt_dir {
 			prompt_segment 4 7
 			for dir_segment in ${(@s:/:)directory:h}; do
 				if (( length > spacing )); then
-					echo -n $dir_segment[1]/
+					echo -n "$dir_segment[1]/"
 					(( length -= $#dir_segment - 1 ))
 				else
-					echo -n $dir_segment/
+					echo -n "$dir_segment/"
 				fi
 			done
-			echo -n ${directory:t}
+			echo -n "${directory:t}"
 		fi
 	fi
 	# ${param:-value} means use param if non-zero length, else value
@@ -328,7 +328,7 @@ function prompt_statusline_precmd_async {
 	# Get Git repository information.
 	if (( $+functions[git-info] )); then
 		git-info
-		typeset -p git_info >! "$_prompt_statusline_precmd_async_data"
+		typeset -p git_info >! $_prompt_statusline_precmd_async_data
 	fi
 
 	# Signal completion to parent process.
@@ -337,9 +337,9 @@ function prompt_statusline_precmd_async {
 
 function prompt_statusline_git_info {
 	# Append Git status.
-	if [[ -s "$_prompt_statusline_precmd_async_data" ]]; then
+	if [[ -s $_prompt_statusline_precmd_async_data ]]; then
 		alias typeset='typeset -g'
-		source "$_prompt_statusline_precmd_async_data"
+		source $_prompt_statusline_precmd_async_data
 		unalias typeset
 	fi
 
@@ -359,7 +359,7 @@ function prompt_statusline_precmd {
 
 	# Kill the old process of slow commands if it is still running.
 	if (( _prompt_statusline_precmd_async_pid > 0 )); then
-		kill -TERM "$_prompt_statusline_precmd_async_pid" &>/dev/null
+		kill -TERM $_prompt_statusline_precmd_async_pid &>/dev/null
 	fi
 
 	# Split off async task to check git status if in git repo
