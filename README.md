@@ -31,7 +31,7 @@ The [prezto version](prezto/prompt_statusline_setup) is more optimized for zsh t
 ###Installation
 Simply run this in your shell:
 ```zsh
-zsh "$(curl -fsSL https://raw.githubusercontent.com/el1t/statusline/master/prezto/install)"
+zsh -c "$(curl -fsSL https://raw.githubusercontent.com/el1t/statusline/master/prezto/install)"
 ```
 [Manual installation](prezto/README.md)
 

@@ -5,7 +5,7 @@ This version is more optimized than the oh-my-zsh version, and features more seg
 ## Installation
 ### Automatic
 ```zsh
-zsh "$(curl -fsSL https://raw.githubusercontent.com/el1t/statusline/master/prezto/install)"
+zsh -c "$(curl -fsSL https://raw.githubusercontent.com/el1t/statusline/master/prezto/install)"
 ```
 [install](install) will install statusline, prezto, and other requisites as needed.
 

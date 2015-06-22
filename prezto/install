@@ -1,4 +1,5 @@
 #!/bin/zsh
+clear
 local input=
 if [[ $1 != '-f' && $1 != '--force' ]]; then
 	cat <<EOH
