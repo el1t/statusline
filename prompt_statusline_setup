@@ -135,8 +135,8 @@ function prompt_status {
 # User: username
 function prompt_user {
 	if [[ -n $SSH_CLIENT || -n $SSH_TTY ]]; then
-		prompt_segment 0 3 $USERNAME
-		(( _prompt_statusline_length += $#USERNAME ))
+		prompt_segment 0 3 $LOGNAME
+		(( _prompt_statusline_length += $#LOGNAME ))
 	fi
 }
 
