@@ -1,0 +1,82 @@
+#!/bin/zsh
+local input=
+if [[ $1 != '-f' && $1 != '--force' ]]; then
+	cat <<EOH
+This script will install the statusline prezto theme.
+It will also install/setup prezto and other requisites as needed.
+EOH
+	(( $+commands[uninstall_oh_my_zsh] )) && echo '(oh-my-zsh will be uninstalled)'
+	read -q input\?'Continue? [yn] '
+	echo
+	[[ $input == n ]] && exit || unset input
+	echo
+fi
+
+# Uninstall oh-my-zsh
+if (( $+commands[uninstall_oh_my_zsh] )); then
+	print -P '%B>>> Uninstalling oh-my-zsh%b'
+	uninstall_oh_my_zsh
+fi
+
+# Setup prezto
+if [[ ! -d "${ZDOTDIR:-$HOME}/.zprezto/" ]]; then
+	print -P '%B>>> Installing prezto%b'
+	git clone --recursive https://github.com/sorin-ionescu/prezto.git "${ZDOTDIR:-$HOME}/.zprezto"
+	print -P '%B>>> Setting up zsh config files%b'
+	setopt EXTENDED_GLOB
+	for rcfile in "${ZDOTDIR:-$HOME}"/.zprezto/runcoms/^README.md(.N); do
+		# Append original to prezto version
+		local input="${ZDOTDIR:-$HOME}/.${rcfile:t}"
+		local output=$rcfile
+		if [[ -s $input && -w $output ]]; then
+			echo "Appending $input to $output"
+			echo "\n# Imported from $input\n" >> $output
+			cat $input >> $output
+			[[ ! -d "${ZDOTDIR:-$HOME}/backup_runcoms/" ]] && mkdir "${ZDOTDIR:-$HOME}/backup_runcoms/"
+			mv $input "${ZDOTDIR:-$HOME}/backup_runcoms/"
+		fi
+		# Link prezto version to original
+		echo "Linking $output to $input"
+		ln -s $output $input
+	done
+fi
+
+cd "${ZDOTDIR:-$HOME}/.zprezto/"
+mkdir modules/prompt/external/statusline
+print -P '%B>>> Downloading statusline%b'
+git submodule add https://github.com/el1t/statusline.git modules/prompt/external/statusline
+# Enter statusline directory
+cd modules/prompt/external/statusline
+if [[ ! -s ~/Libary/Fonts/MenloforPowerline-Regular.otf ]]; then
+	print -P '%B>>> Installing Powerline-patched font (current user only)%b'
+	cp setup/MenloforPowerline-Regular.otf ~/Library/Fonts
+else
+	print -P '%B>>> Font already installed, skipping%b'
+fi
+print -P '%B>>> Linking into prezto themes directory%b'
+ln -s prezto/prompt_statusline_setup ../../functions/prompt_statusline_setup
+# Replace current prezto theme in settings
+print -P '%B>>> Adding theme to zpreztorc%b'
+sed -i '' $'/zstyle \':prezto:module:prompt\' theme/c\\
+zstyle \':prezto:module:prompt\' theme \'statusline\'
+' ../../../../runcoms/zpreztorc
+# Add git plugin if necessary
+if grep -qL "'git' \\\\" ../../../../runcoms/zpreztorc ; then
+	print -P '%B>>> Adding git plugin to zpreztorc%b'
+	sed -i '' $'/\'completion\' \\\\/a\\
+\'git\' \\\\
+' ../../../../runcoms/zpreztorc
+fi
+read -q input\?'Use dark theme? (default Solarized Light) [yn] '
+if [[ $input == y ]]; then
+	unset input
+	# Use statusline dark theme
+	sed -i '' "s/'statusline'/'statusline' 'dark'" ../../../../runcoms/zpreztorc
+	open setup/Solarized\ Dark.terminal
+	print -P '%B%UPlease set Solarized Dark as the default Terminal.app theme!%u%b'
+else
+	unset input
+	open setup/Solarized\ Light.terminal
+	print -P '%B%UPlease set Solarized Light as the default Terminal.app theme!%u%b'
+fi
+print -P '%B>>> Statusline has been successfully installed. Please restart zsh to view the theme.%b'

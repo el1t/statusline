@@ -1,6 +1,6 @@
 # 
-# A two-line, context-aware theme styled after powerline.
-# Originalally ported from agnoster, in oh-my-zsh (https://github.com/robbyrussell/oh-my-zsh)
+# A two-line, responsive theme styled after powerline.
+# Originally ported from agnoster, in oh-my-zsh (https://github.com/robbyrussell/oh-my-zsh)
 # Async support from sorin's prompt in prezto
 # 
 # Authors:

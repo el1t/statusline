@@ -29,32 +29,11 @@ The [prezto version](prezto/prompt_statusline_setup) is more optimized for zsh t
 - Machine name: when in remote shell
 
 ###Installation
-To move `prompt_statusline_setup` to your prezto installation folder, run
+Simply run this in your shell:
 ```zsh
-curl -o ~/.zprezto/modules/prompt/functions/prompt_statusline_setup https://raw.githubusercontent.com/el1t/statusline/master/prezto/prompt_statusline_setup
+zsh "$(curl -fsSL https://raw.githubusercontent.com/el1t/statusline/master/prezto/install)"
 ```
-In `zpreztorc`, ensure the following plugins are enabled:
-```zsh
-zstyle ':prezto:load' pmodule \
-	'environment' \
-	'terminal' \
-	'editor' \
-	'history' \
-	'directory' \
-	'spectrum' \
-	'utility' \
-	'completion' \
-	'git' \
-	'prompt'
-```
-Also in `zpreztorc`, change the theme setting as follows:
-```zsh
-zstyle ':prezto:module:prompt' theme 'statusline'             # Default light theme
-zstyle ':prezto:module:prompt' theme 'statusline' 'dark'      # Solarized dark theme
-zstyle ':prezto:module:prompt' theme 'statusline' 'light' ''  # Light with transparent statusbar
-```
-Last but not least, ensure that this custom [patched font](setup/MenloforPowerline-Regular.otf) is installed and enabled in your terminal.
-Happy theming!
+[Manual installation](prezto/README.md)
 
 ##[Oh-my-zsh](https://github.com/robbyrussell/oh-my-zsh)
 The [oh-my-zsh version](oh-my-zsh/statusline.zsh-theme) works without formatting errors found in previous agnoster themes, and has more git information and features compared to the original. I have attempted to optimize checking in large git repos. (In oh-my-zsh, make sure `DISABLE_UNTRACKED_FILES_DIRTY` is set to `true` in your `.zshrc` file for faster performance!)
