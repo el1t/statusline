@@ -21,6 +21,16 @@ if [[ -d ~/.oh-my-zsh/ ]]; then
 	source "$ZSH/lib/functions.zsh"
 	if (( $+functions[uninstall_oh_my_zsh] )); then
 		uninstall_oh_my_zsh
+		# If oh-my-zsh switches to bash, it leaves a dirty .zshrc
+		if [[ ${SHELL:t} != 'zsh' ]]; then
+			print -P '%B>>> Switching back to zsh%b'
+			chsh -s /bin/zsh
+			if [[ -s ~/.zshrc ]]; then
+				print -P '%B%F{1}>>> Renaming .zshrc to .zshrc.omz-backup%f%b'
+				echo '(oh-my-zsh uninstall left a dirty .zshrc)'
+				mv ~/.zshrc ~/.zshrc.omz-backup
+			fi
+		fi
 	else
 		>&2 print -P '%F{1}%BError%b%f: Could not locate uninstall function'
 		echo 'Please uninstall oh-my-zsh manually'
@@ -41,7 +51,7 @@ if [[ ! -d "${ZDOTDIR:-$HOME}/.zprezto/" ]]; then
 		local output=$rcfile
 		if [[ -s $input && -w $output ]]; then
 			echo "Appending $input to $output"
-			echo "\n# Imported from $input\n" >> $output
+			echo "\n#\n# Imported from $input\n#\n" >> $output
 			cat $input >> $output
 			[[ ! -d "${ZDOTDIR:-$HOME}/backup_runcoms/" ]] && mkdir "${ZDOTDIR:-$HOME}/backup_runcoms/"
 			mv $input "${ZDOTDIR:-$HOME}/backup_runcoms/"
@@ -55,6 +65,7 @@ fi
 cd "${ZDOTDIR:-$HOME}/.zprezto/"
 print -P '%B>>> Downloading statusline%b'
 git submodule add https://github.com/el1t/statusline.git modules/prompt/external/statusline
+
 # Enter statusline directory
 cd modules/prompt/external/statusline
 if [[ ! -s ~/Libary/Fonts/MenloforPowerline-Regular.otf ]]; then
@@ -65,11 +76,13 @@ else
 fi
 print -P '%B>>> Linking into prezto themes directory%b'
 ln -s "$PWD/prezto/prompt_statusline_setup" ../../functions/
+
 # Replace current prezto theme in settings
 print -P '%B>>> Adding theme to zpreztorc%b'
 sed -i '' $'/zstyle \':prezto:module:prompt\' theme/c\\
 zstyle \':prezto:module:prompt\' theme \'statusline\'
 ' ../../../../runcoms/zpreztorc
+
 # Add git plugin if necessary
 if grep -qL "'git' \\\\" ../../../../runcoms/zpreztorc ; then
 	print -P '%B>>> Adding git plugin to zpreztorc%b'
@@ -77,17 +90,19 @@ if grep -qL "'git' \\\\" ../../../../runcoms/zpreztorc ; then
 \'git\' \\\\
 ' ../../../../runcoms/zpreztorc
 fi
+
 read -q input\?'Use dark theme? (default Solarized Light) [yn] '
 echo
 if [[ $input == y ]]; then
-	unset input
-	# Use statusline dark theme
+	input='Dark'
 	sed -i '' "s/'statusline'/'statusline' 'dark'/" ../../../../runcoms/zpreztorc
-	open setup/Solarized\ Dark.terminal
-	print -P '%B%UPlease set Solarized Dark as the default Terminal.app theme!%u%b'
 else
-	unset input
-	open setup/Solarized\ Light.terminal
-	print -P '%B%UPlease set Solarized Light as the default Terminal.app theme!%u%b'
+	input='Light'
 fi
+# Open new terminal window with included profile
+open "setup/Solarized\ $input.terminal"
+print -P "%B%UPlease set Solarized $input as the default Terminal.app theme!%u%b"
+echo "Terminal > Preferences... > Profiles > Solarized $input > Default"
+unset input
+
 print -P '%B>>> Statusline has been successfully installed. Please restart zsh to view the theme.%b'
