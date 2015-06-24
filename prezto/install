@@ -1,7 +1,7 @@
 #!/bin/zsh
-clear
 local input=
 if [[ $1 != '-f' && $1 != '--force' ]]; then
+	clear
 	cat <<EOH
 This script will install the statusline prezto theme.
 It will also install/setup prezto and other requisites as needed.
@@ -43,7 +43,6 @@ if [[ ! -d "${ZDOTDIR:-$HOME}/.zprezto/" ]]; then
 fi
 
 cd "${ZDOTDIR:-$HOME}/.zprezto/"
-mkdir modules/prompt/external/statusline
 print -P '%B>>> Downloading statusline%b'
 git submodule add https://github.com/el1t/statusline.git modules/prompt/external/statusline
 # Enter statusline directory
@@ -55,7 +54,7 @@ else
 	print -P '%B>>> Font already installed, skipping%b'
 fi
 print -P '%B>>> Linking into prezto themes directory%b'
-ln -s prezto/prompt_statusline_setup ../../functions/prompt_statusline_setup
+ln -s "$PWD/prezto/prompt_statusline_setup" ../../functions/
 # Replace current prezto theme in settings
 print -P '%B>>> Adding theme to zpreztorc%b'
 sed -i '' $'/zstyle \':prezto:module:prompt\' theme/c\\
@@ -69,10 +68,11 @@ if grep -qL "'git' \\\\" ../../../../runcoms/zpreztorc ; then
 ' ../../../../runcoms/zpreztorc
 fi
 read -q input\?'Use dark theme? (default Solarized Light) [yn] '
+echo
 if [[ $input == y ]]; then
 	unset input
 	# Use statusline dark theme
-	sed -i '' "s/'statusline'/'statusline' 'dark'" ../../../../runcoms/zpreztorc
+	sed -i '' "s/'statusline'/'statusline' 'dark'/" ../../../../runcoms/zpreztorc
 	open setup/Solarized\ Dark.terminal
 	print -P '%B%UPlease set Solarized Dark as the default Terminal.app theme!%u%b'
 else
