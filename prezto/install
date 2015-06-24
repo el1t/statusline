@@ -1,7 +1,19 @@
 #!/bin/zsh
 local input=
+
 if [[ $1 != '-f' && $1 != '--force' ]]; then
 	clear
+	# Version check
+	min_zsh_version='5.0.0'
+	if ! autoload -Uz is-at-least || ! is-at-least $min_zsh_version; then
+		>&2 print "statusline: old shell detected, minimum supported: $min_zsh_version"
+		read -q input \?'Continue anyways? [yn] '
+		echo
+		[[ $input == n ]] && exit || unset input
+		echo
+	fi
+	unset min_zsh_version
+	# Info
 	cat <<EOH
 This script will install the statusline prezto theme.
 It will also install/setup prezto and other requisites as needed.
@@ -32,7 +44,7 @@ if [[ -d ~/.oh-my-zsh/ ]]; then
 			fi
 		fi
 	else
-		>&2 print -P '%F{1}%BError%b%f: Could not locate uninstall function'
+		>&2 print 'statusline: could not locate omz uninstall function'
 		echo 'Please uninstall oh-my-zsh manually'
 		exit
 	fi
