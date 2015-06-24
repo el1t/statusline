@@ -6,7 +6,8 @@ if [[ $1 != '-f' && $1 != '--force' ]]; then
 This script will install the statusline prezto theme.
 It will also install/setup prezto and other requisites as needed.
 EOH
-	(( $+commands[uninstall_oh_my_zsh] )) && echo '(oh-my-zsh will be uninstalled)'
+	[[ -d ~/.oh-my-zsh/ ]] && print -P '%F{1}%UWarning%u%f: oh-my-zsh will be uninstalled'
+	echo
 	read -q input\?'Continue? [yn] '
 	echo
 	[[ $input == n ]] && exit || unset input
@@ -14,9 +15,18 @@ EOH
 fi
 
 # Uninstall oh-my-zsh
-if (( $+commands[uninstall_oh_my_zsh] )); then
+if [[ -d ~/.oh-my-zsh/ ]]; then
 	print -P '%B>>> Uninstalling oh-my-zsh%b'
-	uninstall_oh_my_zsh
+	local +h ZSH=~/.oh-my-zsh/
+	source "$ZSH/lib/functions.zsh"
+	if (( $+functions[uninstall_oh_my_zsh] )); then
+		uninstall_oh_my_zsh
+	else
+		>&2 print -P '%F{1}%BError%b%f: Could not locate uninstall function'
+		echo 'Please uninstall oh-my-zsh manually'
+		exit
+	fi
+	unset ZSH
 fi
 
 # Setup prezto
