@@ -75,7 +75,7 @@ else
 	print -P '%B>>> Font already installed, skipping%b'
 fi
 print -P '%B>>> Linking into prezto themes directory%b'
-ln -s "$PWD/prezto/prompt_statusline_setup" ../../functions/
+ln -fs "$PWD/prezto/prompt_statusline_setup" ../../functions/
 
 # Replace current prezto theme in settings
 print -P '%B>>> Adding theme to zpreztorc%b'
