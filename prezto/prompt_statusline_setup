@@ -39,7 +39,7 @@ typeset -rg _prompt_statusline_separator_light_right=''
 # Begin a segment
 # Takes two arguments, background and foreground. Both can be omitted,
 # rendering default background/foreground.
-function prompt_segment {
+function prompt_statusline_segment_left {
 	local bg fg
 	[[ -n $1 ]] && bg="%K{$1}" || bg='%k'
 	[[ -n $2 ]] && fg="%F{$2}" || fg='%f'
@@ -58,7 +58,7 @@ function prompt_segment {
 }
 
 # End the prompt, closing any open segments
-function prompt_end {
+function prompt_statusline_segment_end {
 	[[ -n $_prompt_statusline_middle_bg ]] && _prompt_statusline_middle_bg="%K{$_prompt_statusline_middle_bg}" || _prompt_statusline_middle_bg='%k'
 	if [[ -n $_prompt_statusline_current_bg ]]; then
 		echo -n " %F{$_prompt_statusline_current_bg}$_prompt_statusline_middle_bg$_prompt_statusline_separator"
@@ -69,13 +69,13 @@ function prompt_end {
 }
 
 # Set the bg color for rprompt
-function prompt_start {
+function prompt_statusline_segment_start {
 	echo -n "${${_prompt_statusline_middle_bg:+%K{$_prompt_statusline_middle_bg}}:-%k}"
 	_prompt_statusline_current_bg=$_prompt_statusline_middle_bg
 }
 
 # Begin a segment in rprompt
-function right_prompt_segment {
+function prompt_statusline_segment_right {
 	local bg fg
 	[[ -n $1 ]] && bg="%K{$1}" || bg='%k'
 	[[ -n $2 ]] && fg="%F{$2}" || fg='%f'
@@ -88,23 +88,16 @@ function right_prompt_segment {
 	[[ -n $3 ]] && echo -n "$3 "
 }
 
-# Pad background for tmux prompt manually, due to lack of %E support
-function prompt_tmux_padding {
-	if [[ -n $TMUX ]]; then
-		echo -n "%K{$_prompt_statusline_bg[1]}${(l:$COLUMNS:: :)}%k%{$(echotc LEFT $COLUMNS)%}"
-	fi
-}
-
 # Display a diamond prompt, centered
-function center_prompt {
+function prompt_statusline_segment_center {
 	local length=$(( (COLUMNS - $#3 - 4) / 2 ))
 	[[ -n $4 ]] && echo -n "%K{$4}"
 	# Pad spaces
-	echo -n "${(l:$length:: :)}$(diamond_prompt $1 $2 $3 $4)"
+	echo -n "${(l:$length:: :)}$(prompt_statusline_segment_diamond $1 $2 $3 $4)"
 }
 
 #  Sample output 
-function diamond_prompt {
+function prompt_statusline_segment_diamond {
 	local padding_color=$4
 	[[ -z $4 ]] && padding_color=$_prompt_statusline_bg[2]
 	echo -n "%F{$1}%K{$padding_color}$_prompt_statusline_separator_right%F{$2}%K{$1} $3 %F{$1}%K{$padding_color}$_prompt_statusline_separator%f%E%k"
@@ -121,81 +114,81 @@ function prompt_statusline_segment_standalone {
 # Each component will draw itself, and hide itself if no information needs to be shown
 
 # Status: root/error/background jobs
-function prompt_status {
+function prompt_statusline_left_status {
 	local symbols="%(#.%F{3}⚡.)"
 	(( $1 != 0 )) && symbols+="%F{1}✘"
 	[[ -n $(jobs -l) ]] && symbols+="%F{6}⚙"
 	symbols="${(%):-$symbols}"
 
 	if [[ -n $symbols ]]; then
-		prompt_segment 0 default $symbols
+		prompt_statusline_segment_left 0 default $symbols
 		(( _prompt_statusline_length += $#symbols + 3 ))
 	fi
 }
 
 # User: username
-function prompt_user {
+function prompt_statusline_left_user {
 	if [[ -n $SSH_CLIENT || -n $SSH_TTY ]]; then
-		prompt_segment 0 3 $LOGNAME
+		prompt_statusline_segment_left 0 3 $LOGNAME
 		(( _prompt_statusline_length += $#LOGNAME ))
 	fi
 }
 
 # Machine: machine name
-function right_prompt_machine {
+function prompt_statusline_right_machine {
 	if [[ -n $SSH_CLIENT || -n $SSH_TTY ]]; then
-		right_prompt_segment 3 0 '@%m'
+		prompt_statusline_segment_right 3 0 '@%m'
 	fi
 }
 
 # Git: branch, dirty status, commits behind/ahead of remote
-function prompt_git {
+function prompt_statusline_left_git {
 	# If async has finished
 	if (( _prompt_statusline_precmd_async_pid == 0 )); then
 		# Declaring this inside the if statement would not be local
 		local git_output="${(e)git_info[prompt]}"
 		if [[ -n $git_output ]]; then
-			prompt_segment $git_info[bg] 7 $git_output
+			prompt_statusline_segment_left $git_info[bg] 7 $git_output
 			(( _prompt_statusline_length += $#git_output + 2 ))
 		fi
 	else
 		# Display placeholder for async, gray color
-		prompt_segment 14 0 ' ...   '
+		prompt_statusline_segment_left 14 0 ' ...   '
 		# Add extra padding in case statuses are present
 		(( _prompt_statusline_length += 8 + 2 + 5))
 	fi
 }
 
 # Git: format action, output other statuses defined in git_info[rprompt]
-function right_prompt_git {
+function prompt_statusline_right_git {
 	# If async has finished
 	if (( _prompt_statusline_precmd_async_pid == 0 )); then
 		local git_output=$git_info[rprompt]
 		if [[ -n $git_output ]]; then
 			case $git_info[action] in
 				(apply)
-					right_prompt_segment $_prompt_statusline_bg[1] '' '<A<'
+					prompt_statusline_segment_right $_prompt_statusline_bg[1] '' '<A<'
 					;;
 				(bisect)
-					right_prompt_segment $_prompt_statusline_bg[1] '' '<B>'
+					prompt_statusline_segment_right $_prompt_statusline_bg[1] '' '<B>'
 					;;
 				(cherry-pick|cherry-pick-sequence)
-					right_prompt_segment $_prompt_statusline_bg[1] '' '<C<'
+					prompt_statusline_segment_right $_prompt_statusline_bg[1] '' '<C<'
 					;;
 				(merge)
-					right_prompt_segment $_prompt_statusline_bg[1] '' '>M<'
+					prompt_statusline_segment_right $_prompt_statusline_bg[1] '' '>M<'
 					;;
 				(rebase|rebase-interactive|rebase-merge)
-					right_prompt_segment $_prompt_statusline_bg[1] '' '>R>'
+					prompt_statusline_segment_right $_prompt_statusline_bg[1] '' '>R>'
 					;;
 			esac
-			right_prompt_segment $_prompt_statusline_bg[1] '' $git_output
+			prompt_statusline_segment_right $_prompt_statusline_bg[1] '' $git_output
 		fi
 	fi
 }
 
 # Output runtime of previous task
-function prompt_elapsed_time {
+function prompt_statusline_elapsed_time {
 	if [[ -n $_prompt_statusline_start_time ]]; then
 		local end_time=$(( SECONDS - _prompt_statusline_start_time ))
 		if (( end_time >= 10 )); then
@@ -210,29 +203,29 @@ function prompt_elapsed_time {
 			fi
 			output=$output"${end_time}s"
 			echo
-			print -P "$(center_prompt 13 7 $output $_prompt_statusline_bg[1])"
+			print -P "$(prompt_statusline_segment_center 13 7 $output $_prompt_statusline_bg[1])"
 		fi
 		unset _prompt_statusline_start_time
 	fi
 }
 
 # Dir: current working directory, shortens if longer than available space
-function prompt_dir {
+function prompt_statusline_left_dir {
 	local directory="${${(%):-%~}}"
 	local hashed_directory="${${directory[2,-1]%%/*}:-$directory[1]}"
-	prompt_segment 4 7 $hashed_directory
+	prompt_statusline_segment_left 4 7 $hashed_directory
 	(( _prompt_statusline_length += $#hashed_directory + 2 ))
 	# Replace directory with empty string if at base of hashed directory, else eliminate hashed portion
 	directory="${${directory:#^?*/*}:+${directory#?*/}}"
 	if [[ -n $directory ]]; then
-		local spacing=$(prompt_helper_count_spacing)
+		local spacing=$(prompt_statusline_left_dir_spacing)
 		local length=$#directory
 		if (( length < spacing )); then
-			prompt_segment 4 7 $directory
+			prompt_statusline_segment_left 4 7 $directory
 		else
 			# Shorten path as much as necessary
 			local dir_segment
-			prompt_segment 4 7
+			prompt_statusline_segment_left 4 7
 			for dir_segment in ${(@s:/:)directory:h}; do
 				if (( length > spacing )); then
 					echo -n "$dir_segment[1]/"
@@ -249,8 +242,8 @@ function prompt_dir {
 	# ${(C)__string__} capitalizes the first character of each word, zsh style
 }
 
-# Helper function: count the spaces available for printing the working directory
-function prompt_helper_count_spacing {
+# Spacing: count the spaces available for printing the working directory
+function prompt_statusline_left_dir_spacing {
 	# Returns exit code 0 if in SSH
 	[[ -n $SSH_CLIENT || -n $SSH_TTY ]]
 	# Store substituted string of trimmed time, history count, and machine name depending on previous exit code
@@ -260,28 +253,34 @@ function prompt_helper_count_spacing {
 }
 
 # Draw PS1
-function statusbar_left {
+function prompt_statusline_left {
 	local retval=$?
 	_prompt_statusline_current_bg=
-	prompt_tmux_padding
-	prompt_status $retval
-	prompt_user
-	[[ -n $_prompt_statusline_git ]] && prompt_git
-	prompt_dir
-	prompt_end
+
+	# Pad background for tmux prompt manually, due to lack of %E support
+	if [[ -n $TMUX ]]; then
+		echo -n "%K{$_prompt_statusline_bg[1]}${(l:$COLUMNS:: :)}%k%{$(echotc LEFT $COLUMNS)%}"
+	fi
+
+	prompt_statusline_left_status $retval
+	prompt_statusline_left_user
+	[[ -n $_prompt_statusline_git ]] && prompt_statusline_left_git
+	prompt_statusline_left_dir
+	prompt_statusline_segment_end
+
 	# Clear to EOL if not in tmux
 	[[ -z $TMUX ]] && echo -n '%E'
 }
 
 # Draw PS2
-function statusbar_right {
-	prompt_start
-	[[ -n $_prompt_statusline_git ]] && right_prompt_git
+function prompt_statusline_right {
+	prompt_statusline_segment_start
+	[[ -n $_prompt_statusline_git ]] && prompt_statusline_right_git
 	# print time, trimming leading spaces
-	right_prompt_segment 5 7 "${${(%):-%t}## }"
+	prompt_statusline_segment_right 5 7 "${${(%):-%t}## }"
 	# print history number
-	right_prompt_segment $_prompt_statusline_bg[1] '' '!%F{4}%!'
-	right_prompt_machine
+	prompt_statusline_segment_right $_prompt_statusline_bg[1] '' '!%F{4}%!'
+	prompt_statusline_right_machine
 }
 
 function prompt_statusline_setup_style {
@@ -289,7 +288,7 @@ function prompt_statusline_setup_style {
 	zstyle ':completion:*:corrections' format "$(prompt_statusline_segment_standalone 2 7 '%d (errors: %e)')"
 	zstyle ':completion:*:descriptions' format "$(prompt_statusline_segment_standalone 3 7 '%d')"
 	zstyle ':completion:*:messages' format ' %F{13} -- %d --%f'
-	zstyle ':completion:*:warnings' format "$(center_prompt 1 $_prompt_statusline_bg[1] 'No matches found')"
+	zstyle ':completion:*:warnings' format "$(prompt_statusline_segment_center 1 $_prompt_statusline_bg[1] 'No matches found')"
 	zstyle ':completion:*:default' list-prompt '%S%M matches%s'
 	zstyle ':completion:*' format "$(prompt_statusline_segment_standalone 3 7 '%d')"
 
@@ -360,7 +359,7 @@ function prompt_statusline_precmd {
 	unsetopt XTRACE KSH_ARRAYS
 
 	# Check previous task runtime
-	prompt_elapsed_time
+	prompt_statusline_elapsed_time
 
 	# Kill the old process of slow commands if it is still running.
 	if (( _prompt_statusline_precmd_async_pid > 0 )); then
@@ -442,9 +441,9 @@ function prompt_statusline_setup {
 
 	# Set primary prompt
 	PROMPT="$(print $FX[none])"'
-$(statusbar_left)
+$(prompt_statusline_left)
 $editor_info[keymap]'
-	RPROMPT='%{$terminfo[cuu1]$terminfo[cuf1]%}$(statusbar_right)%{$(echotc DO 1)%}'
+	RPROMPT='%{$terminfo[cuu1]$terminfo[cuf1]%}$(prompt_statusline_right)%{$(echotc DO 1)%}'
 
 	# Secondary prompt, printed when the shell needs more information to complete a command
 	PS2="%F{6}%K{$_prompt_statusline_bg[1]}❯%k%F{$_prompt_statusline_bg[1]}$_prompt_statusline_separator%f"
