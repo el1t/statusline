@@ -41,8 +41,8 @@ typeset -rg _prompt_statusline_separator_light_right=''
 # rendering default background/foreground.
 function prompt_segment {
 	local bg fg
-	[[ -n $1 ]] && bg="%K{$1}" || bg="%k"
-	[[ -n $2 ]] && fg="%F{$2}" || fg="%f"
+	[[ -n $1 ]] && bg="%K{$1}" || bg='%k'
+	[[ -n $2 ]] && fg="%F{$2}" || fg='%f'
 	if [[ -n $_prompt_statusline_current_bg ]]; then
 		if [[ $1 != $_prompt_statusline_current_bg ]]; then
 			echo -n " $bg%F{$_prompt_statusline_current_bg}$_prompt_statusline_separator "
@@ -59,7 +59,7 @@ function prompt_segment {
 
 # End the prompt, closing any open segments
 function prompt_end {
-	[[ -n $_prompt_statusline_middle_bg ]] && _prompt_statusline_middle_bg="%K{$_prompt_statusline_middle_bg}" || _prompt_statusline_middle_bg="%k"
+	[[ -n $_prompt_statusline_middle_bg ]] && _prompt_statusline_middle_bg="%K{$_prompt_statusline_middle_bg}" || _prompt_statusline_middle_bg='%k'
 	if [[ -n $_prompt_statusline_current_bg ]]; then
 		echo -n " %F{$_prompt_statusline_current_bg}$_prompt_statusline_middle_bg$_prompt_statusline_separator"
 	else
@@ -81,10 +81,10 @@ function right_prompt_segment {
 		bg="%K{$1}"
 		bbg="%F{$1}"
 	else
-		bg="%k"
-		bbg="%f"
+		bg='%k'
+		bbg='%f'
 	fi
-	[[ -n $2 ]] && fg="%F{$2}" || fg="%f"
+	[[ -n $2 ]] && fg="%F{$2}" || fg='%f'
 	if [[ $1 != $_prompt_statusline_current_bg ]]; then
 		echo -n "$bbg$_prompt_statusline_separator_right$bg$fg "
 	else
@@ -116,6 +116,19 @@ function diamond_prompt {
 	echo -n "%F{$1}%K{$padding_color}$_prompt_statusline_separator_right%F{$2}%K{$1} $3 %F{$1}%K{$padding_color}$_prompt_statusline_separator%f%E%k"
 }
 
+function prompt_statusline_segment_standalone {
+	local bg fg bbg
+	if [[ -n $1 ]]; then
+		bg="%K{$1}"
+		bbg="%F{$1}"
+	else
+		bg="%K{$_prompt_statusline_bg[1]}"
+		bbg="%F{$_prompt_statusline_bg[1]}"
+	fi
+	[[ -n $2 ]] && fg="%F{$2}" || fg='%f'
+	echo -n "$fg$bg $3 %K{$_prompt_statusline_bg[2]}$bbg$_prompt_statusline_separator%f%k "
+}
+
 ### Prompt components
 # Each component will draw itself, and hide itself if no information needs to be shown
 
@@ -143,7 +156,7 @@ function prompt_user {
 # Machine: machine name
 function right_prompt_machine {
 	if [[ -n $SSH_CLIENT || -n $SSH_TTY ]]; then
-		right_prompt_segment 3 0 "@%m"
+		right_prompt_segment 3 0 '@%m'
 	fi
 }
 
@@ -279,18 +292,18 @@ function statusbar_right {
 	# print time, trimming leading spaces
 	right_prompt_segment 5 7 "${${(%):-%t}## }"
 	# print history number
-	right_prompt_segment $_prompt_statusline_bg[1] '' "!%F{4}%!"
+	right_prompt_segment $_prompt_statusline_bg[1] '' '!%F{4}%!'
 	right_prompt_machine
 }
 
 function prompt_statusline_setup_style {
 	# Completion styling
-	zstyle ':completion:*:corrections' format "$(diamond_prompt 2 0 '%d (errors: %e)')"
-	zstyle ':completion:*:descriptions' format "$(diamond_prompt 3 0 '%d')"
-	zstyle ':completion:*:messages' format ' %F{purple} -- %d --%f'
+	zstyle ':completion:*:corrections' format "$(prompt_statusline_segment_standalone 2 7 '%d (errors: %e)')"
+	zstyle ':completion:*:descriptions' format "$(prompt_statusline_segment_standalone 3 7 '%d')"
+	zstyle ':completion:*:messages' format ' %F{13} -- %d --%f'
 	zstyle ':completion:*:warnings' format "$(center_prompt 1 $_prompt_statusline_bg[1] 'No matches found')"
 	zstyle ':completion:*:default' list-prompt '%S%M matches%s'
-	zstyle ':completion:*' format "$(diamond_prompt 3 0 %d)"
+	zstyle ':completion:*' format "$(prompt_statusline_segment_standalone 3 7 '%d')"
 
 	# Editor styling
 	zstyle ':prezto:module:editor:info:completing' format '%B%F{1}...%f%b'
@@ -450,14 +463,14 @@ $editor_info[keymap]'
 	RPS2="%k%F{$_prompt_statusline_bg[1]}$_prompt_statusline_separator_right%F{6}%K{$_prompt_statusline_bg[1]} %_%E"
 
 	# Selection prompt used within a select loop
-	PS3="%F{13}%K{7} Select: %F{$_prompt_statusline_bg[1]}%k$_prompt_statusline_separator%f "
+	PS3="$(prompt_statusline_segment_standalone 7 13 'Select:')"
 
 	# Execution trace prompt
 	# setopt xtrace # disable with unsetopt xtrace
-	PS4="%K{$_prompt_statusline_bg[1]} %F{2}%N%f:%F{4}%i %F{$_prompt_statusline_bg[1]}%k$_prompt_statusline_separator%f "
+	PS4="$(prompt_statusline_segment_standalone '' 2 '%N%f:%F{4}%i')"
 
 	# Spelling prompt used to correct spelling errors
-	SPROMPT="%K{9}%F{7} Correction: %F{9}%K{$_prompt_statusline_bg[2]}$_prompt_statusline_separator%k%f change %B%F{1}%R%b%f to %B%F{2}%r%b%f [%Unyae%u]? "
+	SPROMPT="$(prompt_statusline_segment_standalone 9 7 'Correction:')change %B%F{1}%R%b%f to %B%F{2}%r%b%f [%Unyae%u]? "
 }
 
 prompt_statusline_setup "$@"
