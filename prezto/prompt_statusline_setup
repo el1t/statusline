@@ -76,17 +76,11 @@ function prompt_start {
 
 # Begin a segment in rprompt
 function right_prompt_segment {
-	local bg fg bbg
-	if [[ -n $1 ]]; then
-		bg="%K{$1}"
-		bbg="%F{$1}"
-	else
-		bg='%k'
-		bbg='%f'
-	fi
+	local bg fg
+	[[ -n $1 ]] && bg="%K{$1}" || bg='%k'
 	[[ -n $2 ]] && fg="%F{$2}" || fg='%f'
 	if [[ $1 != $_prompt_statusline_current_bg ]]; then
-		echo -n "$bbg$_prompt_statusline_separator_right$bg$fg "
+		echo -n "%F{$_prompt_statusline_current_bg}$bg%S$_prompt_statusline_separator_right%s$fg "
 	else
 		echo -n "$bg%F{$_prompt_statusline_bg[2]}$_prompt_statusline_separator_light_right$fg "
 	fi
@@ -117,16 +111,10 @@ function diamond_prompt {
 }
 
 function prompt_statusline_segment_standalone {
-	local bg fg bbg
-	if [[ -n $1 ]]; then
-		bg="%K{$1}"
-		bbg="%F{$1}"
-	else
-		bg="%K{$_prompt_statusline_bg[1]}"
-		bbg="%F{$_prompt_statusline_bg[1]}"
-	fi
+	local bg fg
+	[[ -n $1 ]] && bg="%K{$1}" || bg="%K{$_prompt_statusline_bg[1]}"
 	[[ -n $2 ]] && fg="%F{$2}" || fg='%f'
-	echo -n "$fg$bg $3 %K{$_prompt_statusline_bg[2]}$bbg$_prompt_statusline_separator%f%k "
+	echo -n "$fg$bg $3 %F{$_prompt_statusline_bg[2]}%S$_prompt_statusline_separator%s%f%k "
 }
 
 ### Prompt components
