@@ -1,22 +1,25 @@
-# 
+#
 # A two-line, responsive theme styled after powerline.
 # Originally ported from agnoster, in oh-my-zsh (https://github.com/robbyrussell/oh-my-zsh)
 # Async support from sorin's prompt in prezto
-# 
+#
 # Authors:
 #   Ellis Tsung (github.com/el1t)
+#
 
-# =======Colors========
-# Norm | Bold | Color (Solarized)
-# =====================
-#   0  |  8   | Black (Base3)
-#   1  |  9   | Red (Orange)
-#   2  |  10  | Green
-#   3  |  11  | Yellow
-#   4  |  12  | Blue
-#   5  |  13  | Magenta (Purple)
-#   6  |  14  | Cyan
-#   7  |  15  | White
+#
+# ==============Colors==============
+# Norm |  Color  | Bold | Solarized
+# ----------------------------------
+#   0  | Black   |   8  |  Base03
+#   1  | Red     |   9  |  Orange
+#   2  | Green   |  10  |  Base01
+#   3  | Yellow  |  11  |  Base00
+#   4  | Blue    |  12  |  Base0
+#   5  | Magenta |  13  |  Violet
+#   6  | Cyan    |  14  |  Base1
+#   7  | White   |  15  |  Base3
+#
 
 # Load dependencies
 pmodload 'helper'
@@ -33,12 +36,11 @@ typeset -rg _prompt_statusline_separator_right=''
 typeset -rg _prompt_statusline_separator_light=''
 typeset -rg _prompt_statusline_separator_light_right=''
 
-### Segment drawing
-# A few utility functions to make it easy and re-usable to draw segmented prompts
+#
+# Segment drawing utilities
+#
 
-# Begin a segment
-# Takes two arguments, background and foreground. Both can be omitted,
-# rendering default background/foreground.
+# Begin a left segment
 function prompt_statusline_segment_left {
 	local bg fg
 	[[ -n $1 ]] && bg="%K{$1}" || bg='%k'
@@ -57,7 +59,7 @@ function prompt_statusline_segment_left {
 	[[ -n $3 ]] && echo -n $3
 }
 
-# End the prompt, closing any open segments
+# End the left prompt, closing any open segments
 function prompt_statusline_segment_end {
 	[[ -n $_prompt_statusline_middle_bg ]] && _prompt_statusline_middle_bg="%K{$_prompt_statusline_middle_bg}" || _prompt_statusline_middle_bg='%k'
 	if [[ -n $_prompt_statusline_current_bg ]]; then
@@ -68,13 +70,13 @@ function prompt_statusline_segment_end {
 	echo -n '%f'
 }
 
-# Set the bg color for rprompt
+# Start the right prompt, setting the current bg color
 function prompt_statusline_segment_start {
 	echo -n "${${_prompt_statusline_middle_bg:+%K{$_prompt_statusline_middle_bg}}:-%k}"
 	_prompt_statusline_current_bg=$_prompt_statusline_middle_bg
 }
 
-# Begin a segment in rprompt
+# Begin a right segment
 function prompt_statusline_segment_right {
 	local bg fg
 	[[ -n $1 ]] && bg="%K{$1}" || bg='%k'
@@ -110,8 +112,9 @@ function prompt_statusline_segment_standalone {
 	echo -n "$fg$bg $3 %F{$_prompt_statusline_bg[2]}%S$_prompt_statusline_separator%s%f%k "
 }
 
-### Prompt components
-# Each component will draw itself, and hide itself if no information needs to be shown
+#
+# Prompt components
+#
 
 # Status: root/error/background jobs
 function prompt_statusline_left_status {
@@ -272,7 +275,7 @@ function prompt_statusline_left {
 	[[ -z $TMUX ]] && echo -n '%E'
 }
 
-# Draw PS2
+# Draw RPS1
 function prompt_statusline_right {
 	prompt_statusline_segment_start
 	[[ -n $_prompt_statusline_git ]] && prompt_statusline_right_git
