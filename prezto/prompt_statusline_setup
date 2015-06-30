@@ -118,9 +118,9 @@ function prompt_statusline_segment_standalone {
 
 # Status: root/error/background jobs
 function prompt_statusline_left_status {
-	local symbols="%(#.%F{3}⚡.)"
-	(( $1 != 0 )) && symbols+="%F{1}✘"
-	[[ -n $(jobs -l) ]] && symbols+="%F{6}⚙"
+	local symbols='%(#.%F{3}⚡.)'
+	(( $1 != 0 )) && symbols+='%F{1}✘'
+	[[ -n $(jobs -l) ]] && symbols+='%F{6}⚙'
 	symbols="${(%):-$symbols}"
 
 	if [[ -n $symbols ]]; then
@@ -298,10 +298,10 @@ function prompt_statusline_setup_style {
 	# Editor styling
 	zstyle ':prezto:module:editor:info:completing' format '%B%F{1}...%f%b'
 	zstyle ':prezto:module:editor:info:keymap:primary' format \
-		'%F{4}%K{$_prompt_statusline_bg[1]}❯%K{$_prompt_statusline_bg[2]}%F{$_prompt_statusline_bg[1]}%f%k'
+		"%F{4}%K{$_prompt_statusline_bg[1]}❯%K{$_prompt_statusline_bg[2]}%F{$_prompt_statusline_bg[1]}%f%k"
 	zstyle ':prezto:module:editor:info:keymap:primary:overwrite' format ' %F{1}♺%f'
 	zstyle ':prezto:module:editor:info:keymap:alternate' format \
-		'%F{9}%K{$_prompt_statusline_bg[1]}❯%K{$_prompt_statusline_bg[2]}%F{$_prompt_statusline_bg[1]}%f%k'
+		"%F{9}%K{$_prompt_statusline_bg[1]}❯%K{$_prompt_statusline_bg[2]}%F{$_prompt_statusline_bg[1]}%f%k"
 
 	# Git-info styling
 	zstyle ':prezto:module:git:info' verbose 'yes'
@@ -408,13 +408,13 @@ function prompt_statusline_preview {
 	local +h PS4=''
 	local +h SPROMPT=''
 
-	editor-info 2>/dev/null
+	editor-info 2> /dev/null
 
 	if (( # > 0 )); then
 		prompt_preview_theme statusline "$@"
 	else
 		prompt_preview_theme statusline light
-		print
+		print "$FX[none]"
 		prompt_preview_theme statusline dark
 	fi
 }
