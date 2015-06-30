@@ -112,7 +112,7 @@ else
 	input='Light'
 fi
 # Open new terminal window with included profile
-open "setup/Solarized\ $input.terminal"
+open "setup/Solarized $input.terminal"
 print -P "%B%UPlease set Solarized $input as the default Terminal.app theme!%u%b"
 echo "Terminal > Preferences... > Profiles > Solarized $input > Default"
 unset input
