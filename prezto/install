@@ -96,10 +96,10 @@ zstyle \':prezto:module:prompt\' theme \'statusline\'
 ' ../../../../runcoms/zpreztorc
 
 # Add git plugin if necessary
-if grep -qL "'git' \\\\" ../../../../runcoms/zpreztorc ; then
+if ! grep -q "'git' \\\\" ../../../../runcoms/zpreztorc ; then
 	print -P '%B>>> Adding git plugin to zpreztorc%b'
 	sed -i '' $'/\'completion\' \\\\/a\\
-\'git\' \\\\
+  \'git\' \\\\
 ' ../../../../runcoms/zpreztorc
 fi
 
