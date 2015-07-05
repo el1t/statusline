@@ -45,6 +45,12 @@ zsh -c "$(curl -fsSL https://raw.githubusercontent.com/el1t/statusline/master/pr
 ```
 [Manual installation](prezto/README.md)
 
+###Updating
+Run this to update prezto and all its submodules (including statusline):
+```sh
+git -C ~/.zprezto pull --recurse-submodules && git -C ~/.zprezto submodule update --init --recursive
+```
+
 ##[Oh-my-zsh](https://github.com/robbyrussell/oh-my-zsh)
 The [oh-my-zsh version](oh-my-zsh/statusline.zsh-theme) works without formatting errors found in the built-in agnoster theme, and has more git information and features compared to the original. I have attempted to optimize speed in large git repos. (In oh-my-zsh, make sure `DISABLE_UNTRACKED_FILES_DIRTY` is set to `true` in your `.zshrc` file for faster performance!)
 
