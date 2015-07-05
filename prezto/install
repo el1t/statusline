@@ -74,9 +74,14 @@ if [[ ! -d "${ZDOTDIR:-$HOME}/.zprezto/" ]]; then
 	done
 fi
 
-cd "${ZDOTDIR:-$HOME}/.zprezto/"
-print -P '%B>>> Downloading statusline%b'
-git submodule add https://github.com/el1t/statusline.git modules/prompt/external/statusline
+if [[ -d "${ZDOTDIR:-$HOME/.zprezto/modules/prompt/external/statusline}" ]]; then
+	print -P '%F{1}%UWarning%u%f: "modules/prompt/external/statusline" directory already exists.'
+	print -P '%B>>> %F{1}Skipping statusline download%f%b'
+else
+	cd "${ZDOTDIR:-$HOME}/.zprezto/"
+	print -P '%B>>> Downloading statusline%b'
+	git submodule add https://github.com/el1t/statusline.git modules/prompt/external/statusline
+fi
 
 # Enter statusline directory
 cd modules/prompt/external/statusline
