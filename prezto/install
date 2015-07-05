@@ -33,10 +33,11 @@ if [[ -d ~/.oh-my-zsh/ ]]; then
 	source "$ZSH/lib/functions.zsh"
 	if (( $+functions[uninstall_oh_my_zsh] )); then
 		uninstall_oh_my_zsh
-		# If oh-my-zsh switches to bash, it leaves a dirty .zshrc
-		if [[ ${SHELL:t} != 'zsh' ]]; then
+		# Detect if oh-my-zsh uninstall switched to bash
+		if [[ ${$(sh -c 'echo $SHELL'):t} != 'zsh' ]]; then
 			print -P '%B>>> Switching back to zsh%b'
 			chsh -s /bin/zsh
+			# If oh-my-zsh switches to bash, it leaves a dirty .zshrc
 			if [[ -s ~/.zshrc ]]; then
 				print -P '%B%F{1}>>> Renaming .zshrc to .zshrc.omz-backup%f%b'
 				echo '(oh-my-zsh uninstall left a dirty .zshrc)'
