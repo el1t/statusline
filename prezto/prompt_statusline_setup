@@ -286,48 +286,6 @@ function prompt_statusline_right {
 	prompt_statusline_right_machine
 }
 
-function prompt_statusline_setup_style {
-	# Completion styling
-	zstyle ':completion:*:corrections' format "$(prompt_statusline_segment_standalone 2 7 '%d (errors: %e)')"
-	zstyle ':completion:*:descriptions' format "$(prompt_statusline_segment_standalone 3 7 '%d')"
-	zstyle ':completion:*:messages' format ' %F{13} -- %d --%f'
-	zstyle ':completion:*:warnings' format "$(prompt_statusline_segment_center 1 $_prompt_statusline_bg[1] 'No matches found')"
-	zstyle ':completion:*:default' list-prompt '%S%M matches%s'
-	zstyle ':completion:*' format "$(prompt_statusline_segment_standalone 3 7 '%d')"
-
-	# Editor styling
-	zstyle ':prezto:module:editor:info:completing' format '%B%F{1}...%f%b'
-	zstyle ':prezto:module:editor:info:keymap:primary' format \
-		"%F{4}%K{$_prompt_statusline_bg[1]}❯%K{$_prompt_statusline_bg[2]}%F{$_prompt_statusline_bg[1]}%f%k"
-	zstyle ':prezto:module:editor:info:keymap:primary:overwrite' format ' %F{1}♺%f'
-	zstyle ':prezto:module:editor:info:keymap:alternate' format \
-		"%F{9}%K{$_prompt_statusline_bg[1]}❯%K{$_prompt_statusline_bg[2]}%F{$_prompt_statusline_bg[1]}%f%k"
-
-	# Git-info styling
-	zstyle ':prezto:module:git:info' verbose 'yes'
-	zstyle ':prezto:module:git:info:action' format '%s'
-	zstyle ':prezto:module:git:info:added' format '%F{2}✚%f'
-	zstyle ':prezto:module:git:info:ahead' format '%F{3}↑%A%f'
-	zstyle ':prezto:module:git:info:behind' format '%F{3}↓%B%f'
-	zstyle ':prezto:module:git:info:branch' format ' %b'
-	zstyle ':prezto:module:git:info:commit' format '%.7c'
-	zstyle ':prezto:module:git:info:deleted' format '%F{1}✖%f'
-	zstyle ':prezto:module:git:info:modified' format '3'
-	zstyle ':prezto:module:git:info:position' format ':%p'
-	zstyle ':prezto:module:git:info:renamed' format '%F{9}➜%f'
-	zstyle ':prezto:module:git:info:stashed' format '%F{6}§%f'
-	zstyle ':prezto:module:git:info:unmerged' format '%F{3}₥%f'
-	zstyle ':prezto:module:git:info:untracked' format '1'
-	zstyle ':prezto:module:git:info:keys' format \
-		'prompt' '$(coalesce "%b" "%p" "%c")%s' \
-		'rprompt' '%A%B%S%a%d%r%U' \
-		'bg' '$(coalesce "%u" "%m" "2")' \
-		'untracked' '%u'
-}
-
-# %s = undo standout, %u = remove underline, %b = unbold, %f = default foreground, %k = default background
-# %S = standout, %U = underline, %B = bold, %F = fg (text) color, %K = bg color, %E = clear to end of line
-
 #
 # Prezto setup functions
 #
@@ -419,6 +377,8 @@ function prompt_statusline_preview {
 	fi
 }
 
+# %s = undo standout, %u = remove underline, %b = unbold, %f = default foreground, %k = default background
+# %S = standout, %U = underline, %B = bold, %F = fg (text) color, %K = bg color, %E = clear to end of line
 function prompt_statusline_setup {
 	setopt LOCAL_OPTIONS
 	unsetopt XTRACE KSH_ARRAYS
@@ -440,7 +400,42 @@ function prompt_statusline_setup {
 	fi
 	[[ -n $2 ]] && _prompt_statusline_middle_bg=$2
 
-	prompt_statusline_setup_style
+	# Completion styling
+	zstyle ':completion:*:corrections' format "$(prompt_statusline_segment_standalone 2 7 '%d (errors: %e)')"
+	zstyle ':completion:*:descriptions' format "$(prompt_statusline_segment_standalone 3 7 '%d')"
+	zstyle ':completion:*:messages' format ' %F{13} -- %d --%f'
+	zstyle ':completion:*:warnings' format "$(prompt_statusline_segment_center 1 $_prompt_statusline_bg[1] 'No matches found')"
+	zstyle ':completion:*:default' list-prompt '%S%M matches%s'
+	zstyle ':completion:*' format "$(prompt_statusline_segment_standalone 3 7 '%d')"
+
+	# Editor styling
+	zstyle ':prezto:module:editor:info:completing' format '%B%F{1}...%f%b'
+	zstyle ':prezto:module:editor:info:keymap:primary' format \
+		"%F{4}%K{$_prompt_statusline_bg[1]}❯%K{$_prompt_statusline_bg[2]}%F{$_prompt_statusline_bg[1]}%f%k"
+	zstyle ':prezto:module:editor:info:keymap:primary:overwrite' format ' %F{1}♺%f'
+	zstyle ':prezto:module:editor:info:keymap:alternate' format \
+		"%F{9}%K{$_prompt_statusline_bg[1]}❯%K{$_prompt_statusline_bg[2]}%F{$_prompt_statusline_bg[1]}%f%k"
+
+	# Git-info styling
+	zstyle ':prezto:module:git:info' verbose 'yes'
+	zstyle ':prezto:module:git:info:action' format '%s'
+	zstyle ':prezto:module:git:info:added' format '%F{2}✚%f'
+	zstyle ':prezto:module:git:info:ahead' format '%F{3}↑%A%f'
+	zstyle ':prezto:module:git:info:behind' format '%F{3}↓%B%f'
+	zstyle ':prezto:module:git:info:branch' format ' %b'
+	zstyle ':prezto:module:git:info:commit' format '%.7c'
+	zstyle ':prezto:module:git:info:deleted' format '%F{1}✖%f'
+	zstyle ':prezto:module:git:info:modified' format '3'
+	zstyle ':prezto:module:git:info:position' format ':%p'
+	zstyle ':prezto:module:git:info:renamed' format '%F{9}➜%f'
+	zstyle ':prezto:module:git:info:stashed' format '%F{6}§%f'
+	zstyle ':prezto:module:git:info:unmerged' format '%F{3}₥%f'
+	zstyle ':prezto:module:git:info:untracked' format '1'
+	zstyle ':prezto:module:git:info:keys' format \
+		'prompt' '$(coalesce "%b" "%p" "%c")%s' \
+		'rprompt' '%A%B%S%a%d%r%U' \
+		'bg' '$(coalesce "%u" "%m" "2")' \
+		'untracked' '%u'
 
 	# Set primary prompt
 	PROMPT="$(print $FX[none])"'
