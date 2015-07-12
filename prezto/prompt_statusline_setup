@@ -286,6 +286,23 @@ function prompt_statusline_right {
 	prompt_statusline_right_machine
 }
 
+# Draw PS1 single-line
+function prompt_statusline_left_single {
+	local retval=$?
+	_prompt_statusline_current_bg=
+	prompt_statusline_left_status $retval
+	prompt_statusline_left_user
+	[[ -n $_prompt_statusline_git ]] && prompt_statusline_left_git
+	prompt_statusline_left_dir
+	prompt_statusline_segment_end
+}
+
+function prompt_statusline_right_single {
+	prompt_statusline_segment_start
+	[[ -n $_prompt_statusline_git ]] && prompt_statusline_right_git
+	prompt_statusline_right_machine
+}
+
 #
 # Prezto setup functions
 #
@@ -393,13 +410,6 @@ function prompt_statusline_setup {
 	add-zsh-hook preexec prompt_statusline_preexec
 	add-zsh-hook precmd prompt_statusline_precmd
 
-	# Customize theme
-	if [[ $1 == 'dark' ]]; then
-		_prompt_statusline_bg=(0 8)
-		_prompt_statusline_middle_bg=0
-	fi
-	[[ -n $2 ]] && _prompt_statusline_middle_bg=$2
-
 	# Completion styling
 	zstyle ':completion:*:corrections' format "$(prompt_statusline_segment_standalone 2 7 '%d (errors: %e)')"
 	zstyle ':completion:*:descriptions' format "$(prompt_statusline_segment_standalone 3 7 '%d')"
@@ -437,11 +447,25 @@ function prompt_statusline_setup {
 		'bg' '$(coalesce "%u" "%m" "2")' \
 		'untracked' '%u'
 
+	# Customize theme
+	if [[ $1 == 'dark' ]]; then
+		_prompt_statusline_bg=(0 8)
+		_prompt_statusline_middle_bg=0
+	fi
+	[[ -n $2 ]] && _prompt_statusline_middle_bg=$2
+
 	# Set primary prompt
-	PROMPT="$(print $FX[none])"'
+	if [[ $3 == 'single' ]]; then
+		_prompt_statusline_middle_bg=$_prompt_statusline_bg[2]
+		PROMPT="%{$(print $FX[none])%}"'
+$(prompt_statusline_left_single)'"%{$(print $FX[none])%}"
+		RPROMPT="%{$terminfo[cuf1]%}"'$(prompt_statusline_right_single)'"%{$(print $FX[none])$terminfo[cuf1]%}"
+	else
+		PROMPT="%{$(print $FX[none])%}"'
 $(prompt_statusline_left)
 $editor_info[keymap]'
-	RPROMPT='%{$terminfo[cuu1]$terminfo[cuf1]%}$(prompt_statusline_right)%{$(echotc DO 1)%}'
+		RPROMPT='%{$terminfo[cuu1]$terminfo[cuf1]%}$(prompt_statusline_right)%{$(echotc DO 1)%}'
+	fi
 
 	# Secondary prompt, printed when the shell needs more information to complete a command
 	PS2="%F{6}%K{$_prompt_statusline_bg[1]}❯%k%F{$_prompt_statusline_bg[1]}$_prompt_statusline_separator%f"
