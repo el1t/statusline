@@ -117,10 +117,37 @@ if [[ $input == y ]]; then
 else
 	input='Light'
 fi
-# Open new terminal window with included profile
-open "setup/Solarized $input.terminal"
-print -P "%B%UPlease set Solarized $input as the default Terminal.app theme!%u%b"
-echo "Terminal > Preferences... > Profiles > Solarized $input > Default"
+input="Solarized $input"
+# Set theme as default in Terminal.app
+# from https://github.com/mathiasbynens/dotfiles/blob/master/.osx
+osascript <<EOD
+tell application "Terminal"
+	local allOpenedWindows
+	local initialOpenedWindows
+	local windowID
+	(* Store the IDs of all the open terminal windows. *)
+	set initialOpenedWindows to id of every window
+	(* Open the custom theme so that it gets added to the list
+	   of available terminal themes (note: this will open two
+	   additional terminal windows). *)
+	do shell script "open 'setup/$input.terminal'"
+	(* Wait a little bit to ensure that the custom theme is added. *)
+	delay 1
+	(* Set the custom theme as the default terminal theme. *)
+	set default settings to settings set "$input"
+	(* Get the IDs of all the currently opened terminal windows. *)
+	set allOpenedWindows to id of every window
+	repeat with windowID in allOpenedWindows
+		if initialOpenedWindows does not contain windowID then
+			(* Close the additional windows that were opened *)
+			close (every window whose id is windowID)
+		else
+			(* Change the theme for the initial opened terminal windows *)
+			set current settings of tabs of (every window whose id is windowID) to settings set "$input"
+		end if
+	end repeat
+end tell
+EOD
 unset input
 
 print -P '%B>>> Statusline has been successfully installed. Please restart zsh to view the theme.%b'
