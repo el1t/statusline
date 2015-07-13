@@ -67,10 +67,8 @@ function prompt_statusline_draw {
 		_prompt_statusline_current_bg=$1
 		echo -n $fg
 		[[ -n $3 ]] && echo -n $3
-		return
-	fi
 	# Begin a right segment
-	if [[ -n $right ]]; then
+	elif [[ -n $right ]]; then
 		local bg fg
 		[[ -n $1 ]] && bg="%K{$1}" || bg='%k'
 		[[ -n $2 ]] && fg="%F{$2}" || fg='%f'
@@ -81,16 +79,12 @@ function prompt_statusline_draw {
 		fi
 		_prompt_statusline_current_bg=$1
 		[[ -n $3 ]] && echo -n "$3 "
-		return
-	fi
 	# Start the right prompt, setting the current bg color
-	if [[ -n $start ]]; then
+	elif [[ -n $start ]]; then
 		echo -n "${${_prompt_statusline_middle_bg:+%K{$_prompt_statusline_middle_bg}}:-%k}"
 		_prompt_statusline_current_bg=$_prompt_statusline_middle_bg
-		return
-	fi
 	# End the left prompt, closing any open segments
-	if [[ -n $end ]]; then
+	elif [[ -n $end ]]; then
 		[[ -n $_prompt_statusline_middle_bg ]] && _prompt_statusline_middle_bg="%K{$_prompt_statusline_middle_bg}" || _prompt_statusline_middle_bg='%k'
 		if [[ -n $_prompt_statusline_current_bg ]]; then
 			echo -n " %F{$_prompt_statusline_current_bg}$_prompt_statusline_middle_bg$_prompt_statusline_separator"
@@ -98,10 +92,8 @@ function prompt_statusline_draw {
 			echo -n $_prompt_statusline_middle_bg
 		fi
 		echo -n '%f'
-		return
-	fi
 	# Center a prompt
-	if [[ -n $center ]]; then
+	elif [[ -n $center ]]; then
 		local length=$(( (COLUMNS - $#3 - 4) / 2 ))
 		[[ -n $4 ]] && echo -n "%K{$4}"
 		# Pad spaces
@@ -112,14 +104,12 @@ function prompt_statusline_draw {
 		local padding_color=$4
 		[[ -z $4 ]] && padding_color=$_prompt_statusline_bg[2]
 		echo -n "%F{$1}%K{$padding_color}$_prompt_statusline_separator_right%F{$2}%K{$1} $3 %F{$1}%K{$padding_color}$_prompt_statusline_separator%f%E%k"
-		return
-	fi
-	if [[ -n $standalone ]]; then
+	# Standalone
+	elif [[ -n $standalone ]]; then
 		local bg fg
 		[[ -n $1 ]] && bg="%K{$1}" || bg="%K{$_prompt_statusline_bg[1]}"
 		[[ -n $2 ]] && fg="%F{$2}" || fg='%f'
 		echo -n "$fg$bg $3 %F{$_prompt_statusline_bg[2]}%S$_prompt_statusline_separator%s%f%k "
-		return
 	fi
 }
 
@@ -142,7 +132,7 @@ function prompt_statusline_left_status {
 
 # User: username
 function prompt_statusline_left_user {
-	if [[ -n $SSH_CLIENT || -n $SSH_TTY ]]; then
+	if [[ -n "$SSH_CLIENT$SSH_TTY" ]]; then
 		prompt_statusline_draw -l 0 3 $LOGNAME
 		(( _prompt_statusline_length += $#LOGNAME ))
 	fi
@@ -150,7 +140,7 @@ function prompt_statusline_left_user {
 
 # Machine: machine name
 function prompt_statusline_right_machine {
-	if [[ -n $SSH_CLIENT || -n $SSH_TTY ]]; then
+	if [[ -n "$SSH_CLIENT$SSH_TTY" ]]; then
 		prompt_statusline_draw -r 3 0 '@%m'
 	fi
 }
@@ -240,7 +230,7 @@ function prompt_statusline_left_dir {
 			# Shorten path as much as necessary
 			local dir_segment
 			prompt_statusline_draw -l 4 7
-			for dir_segment in ${(@s:/:)directory:h}; do
+			for dir_segment in "${(@s:/:)directory:h}"; do
 				if (( length > spacing )); then
 					echo -n "$dir_segment[1]/"
 					(( length -= $#dir_segment - 1 ))
@@ -259,59 +249,59 @@ function prompt_statusline_left_dir {
 # Spacing: count the spaces available for printing the working directory
 function prompt_statusline_left_dir_spacing {
 	# Returns exit code 0 if in SSH
-	[[ -n $SSH_CLIENT || -n $SSH_TTY ]]
+	[[ -n "$SSH_CLIENT$SSH_TTY" ]]
 	# Store substituted string of trimmed time, history count, and machine name depending on previous exit code
 	local temp="${${(%):-%t%!%(?.⮂ @%m .)}## }"
 	# From the total width, subtract spaces, left-side length without working directory, (trimmed) time + space, and history count
 	echo $(( COLUMNS - _prompt_statusline_length - $#temp - 1 ))
 }
 
-# Draw PS1
-function prompt_statusline_left {
+function prompt_statusline_prompt {
 	local retval=$?
-	_prompt_statusline_current_bg=
+	local -a left right single
+	zparseopts l=left -left=left \
+		r=right -right=right \
+		s=single -single=single
+	if [[ -n $single ]]; then
+		# Draw PS1 single-line
+		if [[ -n $left ]]; then
+			_prompt_statusline_current_bg=
+			prompt_statusline_left_status $retval
+			prompt_statusline_left_user
+			[[ -n $_prompt_statusline_git ]] && prompt_statusline_left_git
+			prompt_statusline_left_dir
+			prompt_statusline_draw -e
 
-	# Pad background for tmux prompt manually, due to lack of %E support
-	if [[ -n $TMUX ]]; then
-		echo -n "%K{$_prompt_statusline_bg[1]}${(l:$COLUMNS:: :)}%k%{$(echotc LEFT $COLUMNS)%}"
+		# Draw RPS1 single-line
+		elif [[ -n $right ]]; then
+			prompt_statusline_draw -s
+			[[ -n $_prompt_statusline_git ]] && prompt_statusline_right_git
+			prompt_statusline_right_machine
+		fi
+
+	# Draw PS1
+	elif [[ -n $left ]]; then
+		_prompt_statusline_current_bg=
+		# Pad background for tmux prompt manually, due to lack of %E support
+		[[ -n $TMUX ]] && echo -n "%K{$_prompt_statusline_bg[1]}${(l:$COLUMNS:: :)}%k%{$(echotc LEFT $COLUMNS)%}"
+		prompt_statusline_left_status $retval
+		prompt_statusline_left_user
+		[[ -n $_prompt_statusline_git ]] && prompt_statusline_left_git
+		prompt_statusline_left_dir
+		prompt_statusline_draw -e
+		# Clear to EOL if not in tmux
+		[[ -z $TMUX ]] && echo -n '%E'
+
+	# Draw RPS1
+	elif [[ -n $right ]]; then
+		prompt_statusline_draw -s
+		[[ -n $_prompt_statusline_git ]] && prompt_statusline_right_git
+		# print time, trimming leading spaces
+		prompt_statusline_draw -r 5 7 "${${(%):-%t}## }"
+		# print history number
+		prompt_statusline_draw -r $_prompt_statusline_bg[1] '' '!%F{4}%!'
+		prompt_statusline_right_machine
 	fi
-
-	prompt_statusline_left_status $retval
-	prompt_statusline_left_user
-	[[ -n $_prompt_statusline_git ]] && prompt_statusline_left_git
-	prompt_statusline_left_dir
-	prompt_statusline_draw -e
-
-	# Clear to EOL if not in tmux
-	[[ -z $TMUX ]] && echo -n '%E'
-}
-
-# Draw RPS1
-function prompt_statusline_right {
-	prompt_statusline_draw -s
-	[[ -n $_prompt_statusline_git ]] && prompt_statusline_right_git
-	# print time, trimming leading spaces
-	prompt_statusline_draw -r 5 7 "${${(%):-%t}## }"
-	# print history number
-	prompt_statusline_draw -r $_prompt_statusline_bg[1] '' '!%F{4}%!'
-	prompt_statusline_right_machine
-}
-
-# Draw PS1 single-line
-function prompt_statusline_left_single {
-	local retval=$?
-	_prompt_statusline_current_bg=
-	prompt_statusline_left_status $retval
-	prompt_statusline_left_user
-	[[ -n $_prompt_statusline_git ]] && prompt_statusline_left_git
-	prompt_statusline_left_dir
-	prompt_statusline_draw -e
-}
-
-function prompt_statusline_right_single {
-	prompt_statusline_draw -s
-	[[ -n $_prompt_statusline_git ]] && prompt_statusline_right_git
-	prompt_statusline_right_machine
 }
 
 #
@@ -425,7 +415,7 @@ function prompt_statusline_setup {
 	zstyle ':completion:*:corrections' format "$(prompt_statusline_draw -a 2 7 '%d (errors: %e)')"
 	zstyle ':completion:*:descriptions' format "$(prompt_statusline_draw -a 3 7 '%d')"
 	zstyle ':completion:*:messages' format ' %F{13} -- %d --%f'
-	zstyle ':completion:*:warnings' format "$(prompt_statusline_draw -c -d 1 $_prompt_statusline_bg[1] 'No matches found')"
+	zstyle ':completion:*:warnings' format "$(prompt_statusline_draw -cd 1 $_prompt_statusline_bg[1] 'No matches found')"
 	zstyle ':completion:*:default' list-prompt '%S%M matches%s'
 	zstyle ':completion:*' format "$(prompt_statusline_draw -a 3 7 '%d')"
 
@@ -469,13 +459,13 @@ function prompt_statusline_setup {
 	if [[ $3 == 'single' ]]; then
 		_prompt_statusline_middle_bg=$_prompt_statusline_bg[2]
 		PROMPT="%{$(print $FX[none])%}"'
-$(prompt_statusline_left_single)'"%{$(print $FX[none])%}"
-		RPROMPT="%{$terminfo[cuf1]%}"'$(prompt_statusline_right_single)'"%{$(print $FX[none])$terminfo[cuf1]%}"
+$(prompt_statusline_prompt -sl)'"%{$(print $FX[none])%}"
+		RPROMPT="%{$terminfo[cuf1]%}"'$(prompt_statusline_prompt -sr)'"%{$(print $FX[none])$terminfo[cuf1]%}"
 	else
 		PROMPT="%{$(print $FX[none])%}"'
-$(prompt_statusline_left)
+$(prompt_statusline_prompt -l)
 $editor_info[keymap]'
-		RPROMPT='%{$terminfo[cuu1]$terminfo[cuf1]%}$(prompt_statusline_right)%{$(echotc DO 1)%}'
+		RPROMPT='%{$terminfo[cuu1]$terminfo[cuf1]%}$(prompt_statusline_prompt -r)%{$(echotc DO 1)%}'
 	fi
 
 	# Secondary prompt, printed when the shell needs more information to complete a command
