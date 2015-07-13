@@ -40,76 +40,87 @@ typeset -rg _prompt_statusline_separator_light_right=''
 # Segment drawing utilities
 #
 
-# Begin a left segment
-function prompt_statusline_segment_left {
-	local bg fg
-	[[ -n $1 ]] && bg="%K{$1}" || bg='%k'
-	[[ -n $2 ]] && fg="%F{$2}" || fg='%f'
-	if [[ -n $_prompt_statusline_current_bg ]]; then
-		if [[ $1 != $_prompt_statusline_current_bg ]]; then
-			echo -n " $bg%F{$_prompt_statusline_current_bg}$_prompt_statusline_separator "
+# Draw a segment
+function prompt_statusline_draw {
+	local -a left right start end center diamond standalone
+	zparseopts -D l=left -left=left \
+		r=right -right=right \
+		s=start -start=start \
+		e=end -end=end \
+		c=center -center=center \
+		d=diamond -diamond=diamond \
+		a=standalone -standalond=standalone
+	# Begin a left segment
+	if [[ -n $left ]]; then
+		local bg fg
+		[[ -n $1 ]] && bg="%K{$1}" || bg='%k'
+		[[ -n $2 ]] && fg="%F{$2}" || fg='%f'
+		if [[ -n $_prompt_statusline_current_bg ]]; then
+			if [[ $1 != $_prompt_statusline_current_bg ]]; then
+				echo -n " $bg%F{$_prompt_statusline_current_bg}$_prompt_statusline_separator "
+			else
+				echo -n " $bg%F{$_prompt_statusline_bg[2]}$_prompt_statusline_separator_light "
+			fi
 		else
-			echo -n " $bg%F{$_prompt_statusline_bg[2]}$_prompt_statusline_separator_light "
+			echo -n "$bg "
 		fi
-	else
-		echo -n "$bg "
+		_prompt_statusline_current_bg=$1
+		echo -n $fg
+		[[ -n $3 ]] && echo -n $3
+		return
 	fi
-	_prompt_statusline_current_bg=$1
-	echo -n $fg
-	[[ -n $3 ]] && echo -n $3
-}
-
-# End the left prompt, closing any open segments
-function prompt_statusline_segment_end {
-	[[ -n $_prompt_statusline_middle_bg ]] && _prompt_statusline_middle_bg="%K{$_prompt_statusline_middle_bg}" || _prompt_statusline_middle_bg='%k'
-	if [[ -n $_prompt_statusline_current_bg ]]; then
-		echo -n " %F{$_prompt_statusline_current_bg}$_prompt_statusline_middle_bg$_prompt_statusline_separator"
-	else
-		echo -n $_prompt_statusline_middle_bg
+	# Begin a right segment
+	if [[ -n $right ]]; then
+		local bg fg
+		[[ -n $1 ]] && bg="%K{$1}" || bg='%k'
+		[[ -n $2 ]] && fg="%F{$2}" || fg='%f'
+		if [[ $1 != $_prompt_statusline_current_bg ]]; then
+			echo -n "%F{$_prompt_statusline_current_bg}$bg%S$_prompt_statusline_separator_right%s$fg "
+		else
+			echo -n "$bg%F{$_prompt_statusline_bg[2]}$_prompt_statusline_separator_light_right$fg "
+		fi
+		_prompt_statusline_current_bg=$1
+		[[ -n $3 ]] && echo -n "$3 "
+		return
 	fi
-	echo -n '%f'
-}
-
-# Start the right prompt, setting the current bg color
-function prompt_statusline_segment_start {
-	echo -n "${${_prompt_statusline_middle_bg:+%K{$_prompt_statusline_middle_bg}}:-%k}"
-	_prompt_statusline_current_bg=$_prompt_statusline_middle_bg
-}
-
-# Begin a right segment
-function prompt_statusline_segment_right {
-	local bg fg
-	[[ -n $1 ]] && bg="%K{$1}" || bg='%k'
-	[[ -n $2 ]] && fg="%F{$2}" || fg='%f'
-	if [[ $1 != $_prompt_statusline_current_bg ]]; then
-		echo -n "%F{$_prompt_statusline_current_bg}$bg%S$_prompt_statusline_separator_right%s$fg "
-	else
-		echo -n "$bg%F{$_prompt_statusline_bg[2]}$_prompt_statusline_separator_light_right$fg "
+	# Start the right prompt, setting the current bg color
+	if [[ -n $start ]]; then
+		echo -n "${${_prompt_statusline_middle_bg:+%K{$_prompt_statusline_middle_bg}}:-%k}"
+		_prompt_statusline_current_bg=$_prompt_statusline_middle_bg
+		return
 	fi
-	_prompt_statusline_current_bg=$1
-	[[ -n $3 ]] && echo -n "$3 "
-}
-
-# Display a diamond prompt, centered
-function prompt_statusline_segment_center {
-	local length=$(( (COLUMNS - $#3 - 4) / 2 ))
-	[[ -n $4 ]] && echo -n "%K{$4}"
-	# Pad spaces
-	echo -n "${(l:$length:: :)}$(prompt_statusline_segment_diamond $1 $2 $3 $4)"
-}
-
-#  Sample output 
-function prompt_statusline_segment_diamond {
-	local padding_color=$4
-	[[ -z $4 ]] && padding_color=$_prompt_statusline_bg[2]
-	echo -n "%F{$1}%K{$padding_color}$_prompt_statusline_separator_right%F{$2}%K{$1} $3 %F{$1}%K{$padding_color}$_prompt_statusline_separator%f%E%k"
-}
-
-function prompt_statusline_segment_standalone {
-	local bg fg
-	[[ -n $1 ]] && bg="%K{$1}" || bg="%K{$_prompt_statusline_bg[1]}"
-	[[ -n $2 ]] && fg="%F{$2}" || fg='%f'
-	echo -n "$fg$bg $3 %F{$_prompt_statusline_bg[2]}%S$_prompt_statusline_separator%s%f%k "
+	# End the left prompt, closing any open segments
+	if [[ -n $end ]]; then
+		[[ -n $_prompt_statusline_middle_bg ]] && _prompt_statusline_middle_bg="%K{$_prompt_statusline_middle_bg}" || _prompt_statusline_middle_bg='%k'
+		if [[ -n $_prompt_statusline_current_bg ]]; then
+			echo -n " %F{$_prompt_statusline_current_bg}$_prompt_statusline_middle_bg$_prompt_statusline_separator"
+		else
+			echo -n $_prompt_statusline_middle_bg
+		fi
+		echo -n '%f'
+		return
+	fi
+	# Center a prompt
+	if [[ -n $center ]]; then
+		local length=$(( (COLUMNS - $#3 - 4) / 2 ))
+		[[ -n $4 ]] && echo -n "%K{$4}"
+		# Pad spaces
+		echo -n "${(l:$length:: :)}"
+	fi
+	#  Sample output 
+	if [[ -n $diamond ]]; then
+		local padding_color=$4
+		[[ -z $4 ]] && padding_color=$_prompt_statusline_bg[2]
+		echo -n "%F{$1}%K{$padding_color}$_prompt_statusline_separator_right%F{$2}%K{$1} $3 %F{$1}%K{$padding_color}$_prompt_statusline_separator%f%E%k"
+		return
+	fi
+	if [[ -n $standalone ]]; then
+		local bg fg
+		[[ -n $1 ]] && bg="%K{$1}" || bg="%K{$_prompt_statusline_bg[1]}"
+		[[ -n $2 ]] && fg="%F{$2}" || fg='%f'
+		echo -n "$fg$bg $3 %F{$_prompt_statusline_bg[2]}%S$_prompt_statusline_separator%s%f%k "
+		return
+	fi
 }
 
 #
@@ -124,7 +135,7 @@ function prompt_statusline_left_status {
 	symbols="${(%):-$symbols}"
 
 	if [[ -n $symbols ]]; then
-		prompt_statusline_segment_left 0 default $symbols
+		prompt_statusline_draw -l 0 default $symbols
 		(( _prompt_statusline_length += $#symbols + 3 ))
 	fi
 }
@@ -132,7 +143,7 @@ function prompt_statusline_left_status {
 # User: username
 function prompt_statusline_left_user {
 	if [[ -n $SSH_CLIENT || -n $SSH_TTY ]]; then
-		prompt_statusline_segment_left 0 3 $LOGNAME
+		prompt_statusline_draw -l 0 3 $LOGNAME
 		(( _prompt_statusline_length += $#LOGNAME ))
 	fi
 }
@@ -140,7 +151,7 @@ function prompt_statusline_left_user {
 # Machine: machine name
 function prompt_statusline_right_machine {
 	if [[ -n $SSH_CLIENT || -n $SSH_TTY ]]; then
-		prompt_statusline_segment_right 3 0 '@%m'
+		prompt_statusline_draw -r 3 0 '@%m'
 	fi
 }
 
@@ -151,12 +162,12 @@ function prompt_statusline_left_git {
 		# Declaring this inside the if statement would not be local
 		local git_output="${(e)git_info[prompt]}"
 		if [[ -n $git_output ]]; then
-			prompt_statusline_segment_left $git_info[bg] 7 $git_output
+			prompt_statusline_draw -l $git_info[bg] 7 $git_output
 			(( _prompt_statusline_length += $#git_output + 2 ))
 		fi
 	else
 		# Display placeholder for async, gray color
-		prompt_statusline_segment_left 14 0 ' ...   '
+		prompt_statusline_draw -l 14 0 ' ...   '
 		# Add extra padding in case statuses are present
 		(( _prompt_statusline_length += 8 + 2 + 5))
 	fi
@@ -170,22 +181,22 @@ function prompt_statusline_right_git {
 		if [[ -n $git_output ]]; then
 			case $git_info[action] in
 				(apply)
-					prompt_statusline_segment_right $_prompt_statusline_bg[1] '' '<A<'
+					prompt_statusline_draw -r $_prompt_statusline_bg[1] '' '<A<'
 					;;
 				(bisect)
-					prompt_statusline_segment_right $_prompt_statusline_bg[1] '' '<B>'
+					prompt_statusline_draw -r $_prompt_statusline_bg[1] '' '<B>'
 					;;
 				(cherry-pick|cherry-pick-sequence)
-					prompt_statusline_segment_right $_prompt_statusline_bg[1] '' '<C<'
+					prompt_statusline_draw -r $_prompt_statusline_bg[1] '' '<C<'
 					;;
 				(merge)
-					prompt_statusline_segment_right $_prompt_statusline_bg[1] '' '>M<'
+					prompt_statusline_draw -r $_prompt_statusline_bg[1] '' '>M<'
 					;;
 				(rebase|rebase-interactive|rebase-merge)
-					prompt_statusline_segment_right $_prompt_statusline_bg[1] '' '>R>'
+					prompt_statusline_draw -r $_prompt_statusline_bg[1] '' '>R>'
 					;;
 			esac
-			prompt_statusline_segment_right $_prompt_statusline_bg[1] '' $git_output
+			prompt_statusline_draw -r $_prompt_statusline_bg[1] '' $git_output
 		fi
 	fi
 }
@@ -216,7 +227,7 @@ function prompt_statusline_elapsed_time {
 function prompt_statusline_left_dir {
 	local directory="${${(%):-%~}}"
 	local hashed_directory="${${directory[2,-1]%%/*}:-$directory[1]}"
-	prompt_statusline_segment_left 4 7 $hashed_directory
+	prompt_statusline_draw -l 4 7 $hashed_directory
 	(( _prompt_statusline_length += $#hashed_directory + 2 ))
 	# Replace directory with empty string if at base of hashed directory, else eliminate hashed portion
 	directory="${${directory:#^?*/*}:+${directory#?*/}}"
@@ -224,11 +235,11 @@ function prompt_statusline_left_dir {
 		local spacing=$(prompt_statusline_left_dir_spacing)
 		local length=$#directory
 		if (( length < spacing )); then
-			prompt_statusline_segment_left 4 7 $directory
+			prompt_statusline_draw -l 4 7 $directory
 		else
 			# Shorten path as much as necessary
 			local dir_segment
-			prompt_statusline_segment_left 4 7
+			prompt_statusline_draw -l 4 7
 			for dir_segment in ${(@s:/:)directory:h}; do
 				if (( length > spacing )); then
 					echo -n "$dir_segment[1]/"
@@ -269,7 +280,7 @@ function prompt_statusline_left {
 	prompt_statusline_left_user
 	[[ -n $_prompt_statusline_git ]] && prompt_statusline_left_git
 	prompt_statusline_left_dir
-	prompt_statusline_segment_end
+	prompt_statusline_draw -e
 
 	# Clear to EOL if not in tmux
 	[[ -z $TMUX ]] && echo -n '%E'
@@ -277,12 +288,12 @@ function prompt_statusline_left {
 
 # Draw RPS1
 function prompt_statusline_right {
-	prompt_statusline_segment_start
+	prompt_statusline_draw -s
 	[[ -n $_prompt_statusline_git ]] && prompt_statusline_right_git
 	# print time, trimming leading spaces
-	prompt_statusline_segment_right 5 7 "${${(%):-%t}## }"
+	prompt_statusline_draw -r 5 7 "${${(%):-%t}## }"
 	# print history number
-	prompt_statusline_segment_right $_prompt_statusline_bg[1] '' '!%F{4}%!'
+	prompt_statusline_draw -r $_prompt_statusline_bg[1] '' '!%F{4}%!'
 	prompt_statusline_right_machine
 }
 
@@ -294,11 +305,11 @@ function prompt_statusline_left_single {
 	prompt_statusline_left_user
 	[[ -n $_prompt_statusline_git ]] && prompt_statusline_left_git
 	prompt_statusline_left_dir
-	prompt_statusline_segment_end
+	prompt_statusline_draw -e
 }
 
 function prompt_statusline_right_single {
-	prompt_statusline_segment_start
+	prompt_statusline_draw -s
 	[[ -n $_prompt_statusline_git ]] && prompt_statusline_right_git
 	prompt_statusline_right_machine
 }
@@ -364,10 +375,10 @@ function prompt_statusline_help {
 	print -P \
 "This prompt supports solarized light and dark. You can invoke it thus:
 
-    prompt statusline [<color1>] [<color2>]
+	prompt statusline [<color1>] [<color2>]
 
 Set this theme with:
-    zstyle ':prezto:module:prompt' theme 'statusline' ['<color1>'] ['<color2>']
+	zstyle ':prezto:module:prompt' theme 'statusline' ['<color1>'] ['<color2>']
 
 where the color1 is %Blight%b or %Bdark%b, and color2 is the statusbar background color.
 Solarized light with a white statusbar is the default style."
@@ -411,12 +422,12 @@ function prompt_statusline_setup {
 	add-zsh-hook precmd prompt_statusline_precmd
 
 	# Completion styling
-	zstyle ':completion:*:corrections' format "$(prompt_statusline_segment_standalone 2 7 '%d (errors: %e)')"
-	zstyle ':completion:*:descriptions' format "$(prompt_statusline_segment_standalone 3 7 '%d')"
+	zstyle ':completion:*:corrections' format "$(prompt_statusline_draw -a 2 7 '%d (errors: %e)')"
+	zstyle ':completion:*:descriptions' format "$(prompt_statusline_draw -a 3 7 '%d')"
 	zstyle ':completion:*:messages' format ' %F{13} -- %d --%f'
-	zstyle ':completion:*:warnings' format "$(prompt_statusline_segment_center 1 $_prompt_statusline_bg[1] 'No matches found')"
+	zstyle ':completion:*:warnings' format "$(prompt_statusline_draw -c -d 1 $_prompt_statusline_bg[1] 'No matches found')"
 	zstyle ':completion:*:default' list-prompt '%S%M matches%s'
-	zstyle ':completion:*' format "$(prompt_statusline_segment_standalone 3 7 '%d')"
+	zstyle ':completion:*' format "$(prompt_statusline_draw -a 3 7 '%d')"
 
 	# Editor styling
 	zstyle ':prezto:module:editor:info:completing' format '%B%F{1}...%f%b'
@@ -472,14 +483,14 @@ $editor_info[keymap]'
 	RPS2="%k%F{$_prompt_statusline_bg[1]}$_prompt_statusline_separator_right%F{6}%K{$_prompt_statusline_bg[1]} %_%E"
 
 	# Selection prompt used within a select loop
-	PS3="$(prompt_statusline_segment_standalone 7 13 'Select:')"
+	PS3="$(prompt_statusline_draw -a 7 13 'Select:')"
 
 	# Execution trace prompt
 	# setopt xtrace # disable with unsetopt xtrace
-	PS4="$(prompt_statusline_segment_standalone '' 2 '%N%f:%F{4}%i')"
+	PS4="$(prompt_statusline_draw -a '' 2 '%N%f:%F{4}%i')"
 
 	# Spelling prompt used to correct spelling errors
-	SPROMPT="$(prompt_statusline_segment_standalone 9 7 'Correction:')change %B%F{1}%R%b%f to %B%F{2}%r%b%f [%Unyae%u]? "
+	SPROMPT="$(prompt_statusline_draw -a 9 7 'Correction:')change %B%F{1}%R%b%f to %B%F{2}%r%b%f [%Unyae%u]? "
 }
 
 prompt_statusline_setup "$@"
