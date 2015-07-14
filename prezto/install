@@ -113,7 +113,7 @@ fi
 read -q input\?'Use single-line prompt? (default 2-line, recommended) [yn]'
 echo
 if [[ $input == y ]]; then
-	sed -i '' "s/'statusline'/'statusline' -s" zpreztorc
+	sed -i '' "s/'statusline'/'statusline' -s/" zpreztorc
 fi
 read -q input\?'Use dark theme? (default Solarized Light) [yn] '
 echo
