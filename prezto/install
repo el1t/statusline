@@ -67,7 +67,7 @@ if [[ ! -d "${ZDOTDIR:-$HOME}/.zprezto/" ]]; then
 			echo "\n#\n# Imported from $input\n#\n" >> $output
 			cat $input >> $output
 			[[ ! -d "${ZDOTDIR:-$HOME}/backup_runcoms/" ]] && mkdir "${ZDOTDIR:-$HOME}/backup_runcoms/"
-			mv $input "${ZDOTDIR:-$HOME}/backup_runcoms/"
+			mv $input "$input.prezto-backup"
 		fi
 		# Link prezto version to original
 		echo "Linking $output to $input"
@@ -96,30 +96,37 @@ print -P '%B>>> Linking into prezto themes directory%b'
 ln -fs "$PWD/prezto/prompt_statusline_setup" ../../functions/
 
 # Replace current prezto theme in settings
+cd ../../../../runcoms
 print -P '%B>>> Adding theme to zpreztorc%b'
 sed -i '' $'/zstyle \':prezto:module:prompt\' theme/c\\
 zstyle \':prezto:module:prompt\' theme \'statusline\'
-' ../../../../runcoms/zpreztorc
+' zpreztorc
 
 # Add git plugin if necessary
-if ! grep -q "'git' \\\\" ../../../../runcoms/zpreztorc ; then
+if ! grep -q "'git' \\\\" zpreztorc ; then
 	print -P '%B>>> Adding git plugin to zpreztorc%b'
 	sed -i '' $'/\'completion\' \\\\/a\\
-  \'git\' \\\\
-' ../../../../runcoms/zpreztorc
+\\ \\ \'git\' \\\\
+' zpreztorc
 fi
 
+read -q input\?'Use single-line prompt? (default 2-line, recommended) [yn]'
+echo
+if [[ $input == y ]]; then
+	sed -i '' "s/'statusline'/'statusline' -s" zpreztorc
+fi
 read -q input\?'Use dark theme? (default Solarized Light) [yn] '
 echo
 if [[ $input == y ]]; then
 	input='Dark'
-	sed -i '' "s/'statusline'/'statusline' 'dark'/" ../../../../runcoms/zpreztorc
+	sed -i '' "s/'statusline'/'statusline' -d/" zpreztorc
 else
 	input='Light'
 fi
 input="Solarized $input"
 # Set theme as default in Terminal.app
 # from https://github.com/mathiasbynens/dotfiles/blob/master/.osx
+cd -
 osascript <<EOD
 tell application "Terminal"
 	local allOpenedWindows
