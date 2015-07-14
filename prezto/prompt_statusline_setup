@@ -25,7 +25,7 @@
 pmodload 'helper'
 
 # Global vars/constants
-_prompt_statusline_length=12	# Default number of spaces/symbols in prompt
+_prompt_statusline_length=	# Default number of spaces/symbols in prompt
 _prompt_statusline_current_bg=
 _prompt_statusline_bg=(7 15)
 _prompt_statusline_middle_bg=7
@@ -134,7 +134,7 @@ function prompt_statusline_left_status {
 function prompt_statusline_left_user {
 	if [[ -n "$SSH_CLIENT$SSH_TTY" ]]; then
 		prompt_statusline_draw -l 0 3 $LOGNAME
-		(( _prompt_statusline_length += $#LOGNAME ))
+		(( _prompt_statusline_length += $#LOGNAME + 3 + ${#${(%):-%m}} + 1 + 3 ))
 	fi
 }
 
@@ -150,16 +150,19 @@ function prompt_statusline_left_git {
 	# If async has finished
 	if (( _prompt_statusline_precmd_async_pid == 0 )); then
 		# Declaring this inside the if statement would not be local
-		local git_output="${(e)git_info[prompt]}"
+		local git_output="${(%):-${(e)git_info[prompt]}}"
 		if [[ -n $git_output ]]; then
+			local temp="${(%):-${(e)git_info[rprompt]}}"
 			prompt_statusline_draw -l $git_info[bg] 7 $git_output
-			(( _prompt_statusline_length += $#git_output + 2 ))
+			(( _prompt_statusline_length += $#git_output + 3 + $#temp + 3 ))
+			case $git_info[action] in (apply|bisect|cherry-pick|cherry-pick-sequence|merge|rebase|rebase-interactive|rebase-merge)
+				(( _prompt_statusline_length += 3 + 3 ))
+			esac
 		fi
 	else
 		# Display placeholder for async, gray color
 		prompt_statusline_draw -l 14 0 ' ...   '
-		# Add extra padding in case statuses are present
-		(( _prompt_statusline_length += 8 + 2 + 5))
+		(( _prompt_statusline_length += 8 + 3 ))
 	fi
 }
 
@@ -218,11 +221,15 @@ function prompt_statusline_left_dir {
 	local directory="${${(%):-%~}}"
 	local hashed_directory="${${directory[2,-1]%%/*}:-$directory[1]}"
 	prompt_statusline_draw -l 4 7 $hashed_directory
-	(( _prompt_statusline_length += $#hashed_directory + 2 ))
+	(( _prompt_statusline_length += $#hashed_directory + 3 ))
 	# Replace directory with empty string if at base of hashed directory, else eliminate hashed portion
 	directory="${${directory:#^?*/*}:+${directory#?*/}}"
 	if [[ -n $directory ]]; then
-		local spacing=$(prompt_statusline_left_dir_spacing)
+		# Store substituted string of trimmed time, history count
+		local temp="${${(%):-%t%!}## }"
+		# From the total width, subtract spaces, left-side length without working directory, (trimmed) time + space, and history count
+		# counts the spaces available for printing the working directory
+		local spacing=$(( COLUMNS - _prompt_statusline_length - $#temp - 1 ))
 		local length=$#directory
 		if (( length < spacing )); then
 			prompt_statusline_draw -l 4 7 $directory
@@ -244,16 +251,6 @@ function prompt_statusline_left_dir {
 	# ${param:-value} means use param if non-zero length, else value
 	# (%) means expand % params
 	# ${(C)__string__} capitalizes the first character of each word, zsh style
-}
-
-# Spacing: count the spaces available for printing the working directory
-function prompt_statusline_left_dir_spacing {
-	# Returns exit code 0 if in SSH
-	[[ -n "$SSH_CLIENT$SSH_TTY" ]]
-	# Store substituted string of trimmed time, history count, and machine name depending on previous exit code
-	local temp="${${(%):-%t%!%(?.⮂ @%m .)}## }"
-	# From the total width, subtract spaces, left-side length without working directory, (trimmed) time + space, and history count
-	echo $(( COLUMNS - _prompt_statusline_length - $#temp - 1 ))
 }
 
 function prompt_statusline_prompt {
