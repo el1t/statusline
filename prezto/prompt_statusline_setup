@@ -43,6 +43,7 @@ function prompt_statusline_draw {
 		c=center -center=center \
 		d=diamond -diamond=diamond \
 		a=standalone -standalond=standalone
+
 	# Begin a left segment
 	if [[ -n $left ]]; then
 		local bg fg
@@ -60,22 +61,31 @@ function prompt_statusline_draw {
 		_prompt_statusline_bg[4]=$1
 		echo -n $fg
 		[[ -n $3 ]] && echo -n $3
+
 	# Begin a right segment
 	elif [[ -n $right ]]; then
 		local bg fg
 		[[ -n $1 ]] && bg="%K{$1}" || bg='%k'
 		[[ -n $2 ]] && fg="%F{$2}" || fg='%f'
-		if [[ $1 != $_prompt_statusline_bg[4] ]]; then
-			echo -n "%F{$_prompt_statusline_bg[4]}$bg%S$_prompt_statusline_symbols[1]%s$fg "
+		if [[ -n $_prompt_statusline_bg[4] ]]; then
+			if [[ $1 != $_prompt_statusline_bg[4] ]]; then
+				echo -n "%F{$_prompt_statusline_bg[4]}$bg%S$_prompt_statusline_symbols[1]%s$fg "
+			else
+				echo -n "$bg%F{$_prompt_statusline_bg[2]}$_prompt_statusline_symbols[2]$fg "
+			fi
 		else
-			echo -n "$bg%F{$_prompt_statusline_bg[2]}$_prompt_statusline_symbols[2]$fg "
+			echo -n "%F{$1}$_prompt_statusline_symbols[1]$bg$fg "
 		fi
 		_prompt_statusline_bg[4]=$1
 		[[ -n $3 ]] && echo -n "$3 "
+
 	# Start the right prompt, setting the current bg color
 	elif [[ -n $start ]]; then
-		echo -n "${${_prompt_statusline_bg[3]:+%K{$_prompt_statusline_bg[3]}}:-%k}"
+		local bg
+		[[ -n $_prompt_statusline_bg[3] ]] && bg="%K{$_prompt_statusline_bg[3]}" || bg='%k'
+		echo -n "$bg"
 		_prompt_statusline_bg[4]=$_prompt_statusline_bg[3]
+
 	# End the left prompt, closing any open segments
 	elif [[ -n $end ]]; then
 		local bg
@@ -86,6 +96,7 @@ function prompt_statusline_draw {
 			echo -n $_prompt_statusline_bg[3]
 		fi
 		echo -n '%f'
+
 	# Center a prompt
 	elif [[ -n $center ]]; then
 		local length=$(( (COLUMNS - $#3 - 4) / 2 ))
@@ -93,11 +104,13 @@ function prompt_statusline_draw {
 		# Pad spaces
 		echo -n "${(l:$length:: :)}"
 	fi
+
 	#  Sample output 
 	if [[ -n $diamond ]]; then
 		local padding_color=$4
 		[[ -z $4 ]] && padding_color=$_prompt_statusline_bg[2]
 		echo -n "%F{$1}%K{$padding_color}$_prompt_statusline_symbols[1]%F{$2}%K{$1} $3 %F{$1}%K{$padding_color}$_prompt_statusline_symbols[4]%f%E%k"
+
 	# Standalone
 	elif [[ -n $standalone ]]; then
 		local bg fg
@@ -254,7 +267,6 @@ function prompt_statusline_prompt {
 	if [[ -n $single ]]; then
 		# Draw PS1 single-line
 		if [[ -n $left ]]; then
-			_prompt_statusline_bg[4]=''
 			prompt_statusline_left_status $retval
 			prompt_statusline_left_user
 			[[ -n $_prompt_statusline_git ]] && prompt_statusline_left_git
@@ -270,7 +282,6 @@ function prompt_statusline_prompt {
 
 	# Draw PS1
 	elif [[ -n $left ]]; then
-		_prompt_statusline_bg[4]=''
 		# Pad background for tmux prompt manually, due to lack of %E support
 		[[ -n $TMUX ]] && echo -n "%K{$_prompt_statusline_bg[1]}${(l:$COLUMNS:: :)}%k%{$(echotc LEFT $COLUMNS)%}"
 		prompt_statusline_left_status $retval
