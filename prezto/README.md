@@ -28,23 +28,26 @@ zstyle ':prezto:load' pmodule \
 	'git' \
 	'prompt'
 ```
-Also in `zpreztorc`, change the theme setting as follows:
+Run `prompt -s statusline` for the default theme, or customize the theme in `zpreztorc`:
 ```zsh
 zstyle ':prezto:module:prompt' theme 'statusline'             # Default light theme
-zstyle ':prezto:module:prompt' theme 'statusline' 'dark'      # Solarized dark theme
-zstyle ':prezto:module:prompt' theme 'statusline' 'light' ''  # Light with transparent statusbar
+zstyle ':prezto:module:prompt' theme 'statusline' --dark      # Solarized dark theme
+zstyle ':prezto:module:prompt' theme 'statusline' --color ''  # Transparent statusbar
+zstyle ':prezto:module:prompt' theme 'statusline' --single    # Single-line prompt
 ```
+Run `prompt -h statusline` for more info.
 Last but not least, ensure that this custom [patched font](setup/MenloforPowerline-Regular.otf) is installed and enabled in your terminal.
 Happy theming!
 
 ##Features
 - Asynchronous git status loading
 - Task runtime
-- Light and dark solarized themes
+- Light and dark themes
 - Contextual segments
 - Modular design
 - Custom `PS1`, `RPS1`, `PS2`, `RPS2`, `PS3`, `PS4`, `SPROMPT`, and completion formatting
-- Tmux support
+- Tmux compatible
+- Dual- and single-line prompts
 
 ##Segments
 - Exit status/running jobs: shows indicator for previous task

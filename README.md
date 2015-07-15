@@ -24,6 +24,7 @@ The [prezto version](prezto/) is more optimized for zsh than the other version a
 - Modular design
 - Custom `PS1`, `RPS1`, `PS2`, `RPS2`, `PS3`, `PS4`, `SPROMPT`, and completion formatting
 - Tmux compatible
+- Dual- and single-line prompts
 
 ###Segments
 - Exit status/running jobs: shows indicator for previous task
