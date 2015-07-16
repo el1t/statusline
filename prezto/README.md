@@ -10,6 +10,12 @@ zsh -c "$(curl -fsSL https://raw.githubusercontent.com/el1t/statusline/master/pr
 [install](install) will install statusline, prezto, and other requisites as needed.
 
 ### Manual
+#### Prerequisites
+ - zsh `5.0.0+` and git `2.0.0+`
+ - Install [this font](setup/MenloforPowerline-Regular.otf) in your terminal
+ - Recommended: Install a [solarized light](setup/Solarized\ Light.terminal) or [solarized dark](setup/Solarized\ Dark.terminal) Terminal.app profile
+
+#### Theme files
 To move `prompt_statusline_setup` to your prezto installation folder, run
 ```zsh
 curl -o ~/.zprezto/modules/prompt/functions/prompt_statusline_setup https://raw.githubusercontent.com/el1t/statusline/master/prezto/prompt_statusline_setup
@@ -28,32 +34,40 @@ zstyle ':prezto:load' pmodule \
 	'git' \
 	'prompt'
 ```
-Run `prompt -s statusline` for the default theme, or customize the theme in `zpreztorc`:
+Run `prompt -s statusline` to enable the theme or run `prompt -h statusline` for more info. Happy theming!
+
+## Customization
+You can customize the theme's appearance in `zpreztorc`:
 ```zsh
 zstyle ':prezto:module:prompt' theme 'statusline'             # Default light theme
 zstyle ':prezto:module:prompt' theme 'statusline' --dark      # Solarized dark theme
 zstyle ':prezto:module:prompt' theme 'statusline' --color ''  # Transparent statusbar
 zstyle ':prezto:module:prompt' theme 'statusline' --single    # Single-line prompt
 ```
-Run `prompt -h statusline` for more info.
-Last but not least, ensure that this custom [patched font](setup/MenloforPowerline-Regular.otf) is installed and enabled in your terminal.
-Happy theming!
+Segments are easy to add and remove, just edit the following arrays:
+```zsh
+_prompt_statusline_left_segments=(status user git-branch directory)
+_prompt_statusline_right_segments=(git-status clock history machine)
+```
 
-##Features
-- Asynchronous git status loading
-- Task runtime
-- Light and dark themes
-- Contextual segments
-- Modular design
+## Features
+- *Asynchronous* git status loading
+- Task *runtime*
+- *Light* and *dark* themes
+- *Contextual* segments
+- Fully *modular* design
 - Custom `PS1`, `RPS1`, `PS2`, `RPS2`, `PS3`, `PS4`, `SPROMPT`, and completion formatting
-- Tmux compatible
-- Dual- and single-line prompts
+- *Dual-* and *single-line* prompts
+- *Tmux* compatible
 
-##Segments
-- Exit status/running jobs: shows indicator for previous task
-- Username: when in remote shell
-- Git branch/position/commit and status: when inside git repository
-- Directory: dynamically truncated when too long
-- Time: 12-hour clock
-- History number: index of current line in zsh history
-- Machine name: when in remote shell
+## Segments
+| Name       | Description               | Context                      |
+| ---------- | ------------------------- | ---------------------------- |
+| status     | SU/exit code/running jobs | when statuses are present    |
+| user       | username                  | when in a remote shell       |
+| machine    | machine name              | when in a remote shell       |
+| git-branch | branch/position/commit    | when inside a git repository |
+| git-status | stashed/behind/ahead/etc. | when inside a git repository |
+| directory  | current working directory | dynamically truncated        |
+| time       | 12-hour clock             | always                       |
+| history    | index in zsh history      | always                       |
