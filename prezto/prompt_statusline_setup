@@ -486,6 +486,8 @@ function prompt_statusline_setup {
 
 	if [[ -n $dark ]]; then
 		_prompt_statusline_bg=(0 8 0)
+	else
+		_prompt_statusline_bg=(7 15 7)
 	fi
 
 	# Set single-line prompt
