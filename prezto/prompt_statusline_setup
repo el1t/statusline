@@ -37,7 +37,7 @@ _prompt_statusline_right_segments=(git-status clock history machine)
 #
 
 function prompt_statusline_draw {
-	local -a left right start end center diamond standalone uncalculated
+	local -a left right start end center diamond standalone no_draw
 	local escape_sequences='%([BSUbfksu]|([FB]|){*})'
 	zparseopts -D l=left -left=left \
 		r=right -right=right \
@@ -46,7 +46,7 @@ function prompt_statusline_draw {
 		c=center -center=center \
 		d=diamond -diamond=diamond \
 		a=standalone -standalond=standalone \
-		n=uncalculated -no-calc=uncalculated
+		n=no_draw -no-draw=no_draw
 
 	# Begin a left segment
 	if [[ -n $left ]]; then
@@ -59,7 +59,7 @@ function prompt_statusline_draw {
 			else
 				echo -n " $bg%F{$_prompt_statusline_bg[2]}$_prompt_statusline_symbols[3] "
 			fi
-			[[ -z $uncalculated ]] && (( _prompt_statusline_length += 2 ))
+			(( _prompt_statusline_length += 2 ))
 		else
 			echo -n "$bg "
 		fi
@@ -67,7 +67,7 @@ function prompt_statusline_draw {
 		echo -n $fg
 		if [[ -n $3 ]]; then
 			echo -n $3
-			[[ -z $uncalculated ]] && (( _prompt_statusline_length += ${#${(S%%)${3}//$~escape_sequences/}} + 2 ))
+			(( _prompt_statusline_length += ${#${(S%%)${3}//$~escape_sequences/}} + 2 ))
 		fi
 
 	# Begin a right segment
@@ -81,14 +81,24 @@ function prompt_statusline_draw {
 			else
 				echo -n "$bg%F{$_prompt_statusline_bg[2]}$_prompt_statusline_symbols[2]$fg "
 			fi
-			[[ -z $uncalculated ]] && (( _prompt_statusline_length += 2 ))
 		else
 			echo -n "%F{$1}$_prompt_statusline_symbols[1]$bg$fg "
 		fi
 		_prompt_statusline_bg[4]=$1
 		if [[ -n $3 ]]; then
 			echo -n "$3 "
-			[[ -z $uncalculated ]] && (( _prompt_statusline_length += ${#${(S%%)${3}//$~escape_sequences/}} + 2 ))
+		fi
+
+	# Used to count the length of right prompt segments without drawing segments
+	elif [[ -n $no_draw ]]; then
+		if [[ -n $_prompt_statusline_bg[4] ]]; then
+			(( _prompt_statusline_length += 3 ))
+		else
+			(( _prompt_statusline_length += 2 ))
+			_prompt_statusline_bg[4]=0
+		fi
+		if [[ -n $3 ]]; then
+			(( _prompt_statusline_length += ${#${(S%%)${3}//$~escape_sequences/}} + 1 ))
 		fi
 
 	# Start the right prompt, setting the current bg color
@@ -138,22 +148,19 @@ function prompt_statusline_draw {
 #
 
 function prompt_statusline_segments {
-	local -a left right uncalculated draw_options
+	local -a left right no_draw
 	zparseopts -D r=right -right=right \
 		l=left -left=left \
-		n=uncalculated -no-calc=uncalculated
-	if [[ -z "$left$right" ]]; then
-		echo "$0: Please specify an option" >&2
-	fi
+		n=no_draw -no-calc=no_draw
 
 	# Start right prompt
+	local draw_options
 	if [[ -n $right ]]; then
-		draw_options=('-r')
-	else
-		draw_options=('-l')
-	fi
-	if [[ -n $uncalculated ]]; then
-		draw_options+=('-n')
+		draw_options='-r'
+	elif [[ -n $no_draw ]]; then
+		draw_options='-n'
+	elif [[ -n $left ]]; then
+		draw_options='-l'
 	fi
 
 	while (( # > 0 )); do
@@ -241,11 +248,11 @@ function prompt_statusline_segments {
 					local spacing=$(( COLUMNS - _prompt_statusline_length - 3 - 1 ))
 					local length="$#directory"
 					if (( length <= spacing )); then
-						prompt_statusline_draw $draw_options -n 4 7 $directory
+						prompt_statusline_draw $draw_options 4 7 $directory
 					else
 						# Shorten path as much as necessary
 						local dir_segment
-						prompt_statusline_draw -n $draw_options 4 7
+						prompt_statusline_draw $draw_options 4 7
 						for dir_segment in "${(@s:/:)directory:h}"; do
 							if (( length > spacing )); then
 								echo -n "$dir_segment[1]/"
@@ -306,7 +313,7 @@ function prompt_statusline {
 
 	if [[ -n "$left" ]]; then
 		[[ -z "$single" && -n "$TMUX" ]] && echo -n "%K{$_prompt_statusline_bg[1]}${(l:$COLUMNS:: :)}%k%{$(echotc LEFT $COLUMNS)%}"
-		prompt_statusline_segments -r $_prompt_statusline_right_segments > /dev/null 2>&1
+		prompt_statusline_segments -n $_prompt_statusline_right_segments
 		_prompt_statusline_bg[4]=''
 		prompt_statusline_segments -l $_prompt_statusline_left_segments
 		prompt_statusline_draw -e
@@ -314,7 +321,7 @@ function prompt_statusline {
 
 	elif [[ -n $right ]]; then
 		prompt_statusline_draw -s
-		prompt_statusline_segments -nr $_prompt_statusline_right_segments
+		prompt_statusline_segments -r $_prompt_statusline_right_segments
 	fi
 }
 
