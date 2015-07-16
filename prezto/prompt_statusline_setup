@@ -29,20 +29,24 @@ _prompt_statusline_length=0
 _prompt_statusline_git=''
 _prompt_statusline_bg=(7 15 7 '') # foreground, background, middle, current
 _prompt_statusline_symbols=(   )
+_prompt_statusline_left_segments=(status user git-branch directory)
+_prompt_statusline_right_segments=(git-status clock history machine)
 
 #
 # Segment drawing utility
 #
 
 function prompt_statusline_draw {
-	local -a left right start end center diamond standalone
+	local -a left right start end center diamond standalone uncalculated
+	local escape_sequences='%([BSUbfksu]|([FB]|){*})'
 	zparseopts -D l=left -left=left \
 		r=right -right=right \
 		s=start -start=start \
 		e=end -end=end \
 		c=center -center=center \
 		d=diamond -diamond=diamond \
-		a=standalone -standalond=standalone
+		a=standalone -standalond=standalone \
+		n=uncalculated -no-calc=uncalculated
 
 	# Begin a left segment
 	if [[ -n $left ]]; then
@@ -55,12 +59,16 @@ function prompt_statusline_draw {
 			else
 				echo -n " $bg%F{$_prompt_statusline_bg[2]}$_prompt_statusline_symbols[3] "
 			fi
+			[[ -z $uncalculated ]] && (( _prompt_statusline_length += 2 ))
 		else
 			echo -n "$bg "
 		fi
 		_prompt_statusline_bg[4]=$1
 		echo -n $fg
-		[[ -n $3 ]] && echo -n $3
+		if [[ -n $3 ]]; then
+			echo -n $3
+			[[ -z $uncalculated ]] && (( _prompt_statusline_length += ${#${(S%%)${3}//$~escape_sequences/}} + 2 ))
+		fi
 
 	# Begin a right segment
 	elif [[ -n $right ]]; then
@@ -73,11 +81,15 @@ function prompt_statusline_draw {
 			else
 				echo -n "$bg%F{$_prompt_statusline_bg[2]}$_prompt_statusline_symbols[2]$fg "
 			fi
+			[[ -z $uncalculated ]] && (( _prompt_statusline_length += 2 ))
 		else
 			echo -n "%F{$1}$_prompt_statusline_symbols[1]$bg$fg "
 		fi
 		_prompt_statusline_bg[4]=$1
-		[[ -n $3 ]] && echo -n "$3 "
+		if [[ -n $3 ]]; then
+			echo -n "$3 "
+			[[ -z $uncalculated ]] && (( _prompt_statusline_length += ${#${(S%%)${3}//$~escape_sequences/}} + 2 ))
+		fi
 
 	# Start the right prompt, setting the current bg color
 	elif [[ -n $start ]]; then
@@ -92,6 +104,7 @@ function prompt_statusline_draw {
 		[[ -n $_prompt_statusline_bg[3] ]] && bg="%K{$_prompt_statusline_bg[3]}" || bg='%k'
 		if [[ -n $_prompt_statusline_bg[4] ]]; then
 			echo -n " %F{$_prompt_statusline_bg[4]}$bg$_prompt_statusline_symbols[4]"
+			[[ -z $uncalculated ]] && (( _prompt_statusline_length += 2 ))
 		else
 			echo -n $_prompt_statusline_bg[3]
 		fi
@@ -124,79 +137,142 @@ function prompt_statusline_draw {
 # Prompt components
 #
 
-# Status: root/error/background jobs
-function prompt_statusline_left_status {
-	local symbols='%(#.%F{3}⚡.)'
-	(( $1 != 0 )) && symbols+='%F{1}✘'
-	[[ -n $(jobs -l) ]] && symbols+='%F{6}⚙'
-	symbols="${(%):-$symbols}"
-
-	if [[ -n $symbols ]]; then
-		prompt_statusline_draw -l 0 '' $symbols
-		(( _prompt_statusline_length += $#symbols + 3 ))
+function prompt_statusline_segments {
+	local -a left right uncalculated draw_options
+	zparseopts -D r=right -right=right \
+		l=left -left=left \
+		n=uncalculated -no-calc=uncalculated
+	if [[ -z "$left$right" ]]; then
+		echo "$0: Please specify an option" >&2
 	fi
-}
 
-# User: username
-function prompt_statusline_left_user {
-	if [[ -n "$SSH_CLIENT$SSH_TTY" ]]; then
-		prompt_statusline_draw -l 0 3 $LOGNAME
-		(( _prompt_statusline_length += $#LOGNAME + 3 + ${#${(%):-%m}} + 1 + 3 ))
-	fi
-}
-
-# Machine: machine name
-function prompt_statusline_right_machine {
-	if [[ -n "$SSH_CLIENT$SSH_TTY" ]]; then
-		prompt_statusline_draw -r 3 0 '@%m'
-	fi
-}
-
-# Git: branch, dirty status, commits behind/ahead of remote
-function prompt_statusline_left_git {
-	# If async has finished
-	if (( _prompt_statusline_precmd_async_pid == 0 )); then
-		# Declaring this inside the if statement would not be local
-		local git_output="${(%):-${(e)git_info[prompt]}}"
-		if [[ -n $git_output ]]; then
-			local temp="${(%):-${(e)git_info[rprompt]}}"
-			prompt_statusline_draw -l $git_info[bg] 7 $git_output
-			(( _prompt_statusline_length += $#git_output + 3 + $#temp + 3 ))
-			[[ -n $git_info[action] ]] && (( _prompt_statusline_length += 3 + 3 ))
-		fi
+	# Start right prompt
+	if [[ -n $right ]]; then
+		draw_options=('-r')
 	else
-		# Display placeholder for async, gray color
-		prompt_statusline_draw -l 14 0 ' ...   '
-		(( _prompt_statusline_length += 8 + 3 ))
+		draw_options=('-l')
 	fi
-}
+	if [[ -n $uncalculated ]]; then
+		draw_options+=('-n')
+	fi
 
-# Git: format action, output other statuses defined in git_info[rprompt]
-function prompt_statusline_right_git {
-	# If async has finished
-	if (( _prompt_statusline_precmd_async_pid == 0 )); then
-		local git_output=$git_info[rprompt]
-		if [[ -n $git_output ]]; then
-			case $git_info[action] in
-				(apply)
-					prompt_statusline_draw -r $_prompt_statusline_bg[1] '' '<A<'
-					;;
-				(bisect)
-					prompt_statusline_draw -r $_prompt_statusline_bg[1] '' '<B>'
-					;;
-				(cherry-pick|cherry-pick-sequence)
-					prompt_statusline_draw -r $_prompt_statusline_bg[1] '' '<C<'
-					;;
-				(merge)
-					prompt_statusline_draw -r $_prompt_statusline_bg[1] '' '>M<'
-					;;
-				(rebase|rebase-interactive|rebase-merge)
-					prompt_statusline_draw -r $_prompt_statusline_bg[1] '' '>R>'
-					;;
-			esac
-			prompt_statusline_draw -r $_prompt_statusline_bg[1] '' $git_output
-		fi
-	fi
+	while (( # > 0 )); do
+		case "$1" in
+			# Status: root/error/background jobs
+			(status)
+				local symbols=''
+				[[ $UID == 0 || $EUID == 0 ]] && symbols+='%F{3}⚡'
+				(( retval != 0 )) && symbols+='%F{1}✘'
+				[[ -n $(jobs -l) ]] && symbols+='%F{6}⚙'
+
+				if [[ -n $symbols ]]; then
+					prompt_statusline_draw $draw_options 0 '' $symbols
+				fi
+				;;
+
+			# User: username
+			(user)
+				if [[ -n "$SSH_CLIENT$SSH_TTY" ]]; then
+					prompt_statusline_draw $draw_options 0 3 $LOGNAME
+				fi
+				;;
+
+			# Machine: machine name
+			(machine)
+				if [[ -n "$SSH_CLIENT$SSH_TTY" ]]; then
+					prompt_statusline_draw $draw_options 3 0 '@%m'
+				fi
+				;;
+
+			# Git: branch, dirty status, commits behind/ahead of remote
+			(git-branch)
+				if [[ -n $_prompt_statusline_git ]]; then
+					# If async has finished
+					if (( _prompt_statusline_precmd_async_pid == 0 )); then
+						# Declaring this inside the if statement would not be local
+						local git_output="${(e)git_info[prompt]}"
+						if [[ -n $git_output ]]; then
+							prompt_statusline_draw -l $git_info[bg] 7 $git_output
+						fi
+					else
+						# Display placeholder for async, gray color
+						prompt_statusline_draw -l 14 0 ' ...   '
+					fi
+				fi
+				;;
+
+			# Git: format action, output other statuses defined in git_info[rprompt]
+			(git-status)
+				# If async has finished
+				if [[ -n $_prompt_statusline_git && $_prompt_statusline_precmd_async_pid -eq 0 ]]; then
+					if [[ -n $git_info[rprompt] ]]; then
+						case $git_info[action] in
+							(apply)
+								prompt_statusline_draw -r $_prompt_statusline_bg[1] '' '<A<'
+								;;
+							(bisect)
+								prompt_statusline_draw -r $_prompt_statusline_bg[1] '' '<B>'
+								;;
+							(cherry-pick|cherry-pick-sequence)
+								prompt_statusline_draw -r $_prompt_statusline_bg[1] '' '<C<'
+								;;
+							(merge)
+								prompt_statusline_draw -r $_prompt_statusline_bg[1] '' '>M<'
+								;;
+							(rebase|rebase-interactive|rebase-merge)
+								prompt_statusline_draw -r $_prompt_statusline_bg[1] '' '>R>'
+								;;
+						esac
+						prompt_statusline_draw $draw_options $_prompt_statusline_bg[1] '' $git_info[rprompt]
+					fi
+				fi
+				;;
+
+			# Dir: current working directory, shortens if longer than available space
+			(directory)
+				local directory="${${(%):-%~}}"
+				local hashed_directory="${${directory[2,-1]%%/*}:-$directory[1]}"
+				prompt_statusline_draw $draw_options 4 7 $hashed_directory
+				# Replace directory with empty string if at base of hashed directory, else eliminate hashed portion
+				directory="${${directory:#^?*/*}:+${directory#?*/}}"
+				if [[ -n $directory ]]; then
+					# Count spaces available for printing the working directory
+					# Subtract the extra 3 chars used for the current segment and an extra space in case
+					local spacing=$(( COLUMNS - _prompt_statusline_length - 3 - 1 ))
+					local length="$#directory"
+					if (( length <= spacing )); then
+						prompt_statusline_draw $draw_options -n 4 7 $directory
+					else
+						# Shorten path as much as necessary
+						local dir_segment
+						prompt_statusline_draw -n $draw_options 4 7
+						for dir_segment in "${(@s:/:)directory:h}"; do
+							if (( length > spacing )); then
+								echo -n "$dir_segment[1]/"
+								(( length -= $#dir_segment - 1 ))
+							else
+								echo -n "$dir_segment/"
+							fi
+						done
+						echo -n "${directory:t}"
+					fi
+				fi
+				;;
+
+			(clock)
+				prompt_statusline_draw $draw_options 5 7 "${${(%%):-%t}## }"
+				;;
+
+			(history)
+				prompt_statusline_draw $draw_options $_prompt_statusline_bg[1] '' '!%F{4}%!'
+				;;
+
+			(*)
+				echo "$0: $1 is not a valid segment!" >&2
+				;;
+		esac
+		shift
+	done
 }
 
 # Output runtime of previous task
@@ -204,103 +280,41 @@ function prompt_statusline_elapsed_time {
 	if [[ -n $_prompt_statusline_start_time ]]; then
 		local end_time=$(( SECONDS - _prompt_statusline_start_time ))
 		if (( end_time >= 10 )); then
-			local output
+			local -a output
 			if (( end_time >= 60 )); then
 				if (( end_time >= 3600 )); then
-					output="$(( end_time / 3600 ))h "
+					output+=("$(( end_time / 3600 ))h")
 					end_time=$(( end_time % 3600 ))
 				fi
-				output=$output"$(( end_time / 60 ))m "
+				output+=("$(( end_time / 60 ))m")
 				end_time=$(( end_time % 60 ))
 			fi
-			output=$output"${end_time}s"
+			output+=("${end_time}s")
 			echo
-			print -P "$(prompt_statusline_draw -cd 13 7 $output $_prompt_statusline_bg[1])"
+			print -P '$(prompt_statusline_draw -cd 13 7 "$output" $_prompt_statusline_bg[1])'
 		fi
 		unset _prompt_statusline_start_time
 	fi
 }
 
-# Dir: current working directory, shortens if longer than available space
-function prompt_statusline_left_dir {
-	local directory="${${(%):-%~}}"
-	local hashed_directory="${${directory[2,-1]%%/*}:-$directory[1]}"
-	prompt_statusline_draw -l 4 7 $hashed_directory
-	(( _prompt_statusline_length += $#hashed_directory + 3 ))
-	# Replace directory with empty string if at base of hashed directory, else eliminate hashed portion
-	directory="${${directory:#^?*/*}:+${directory#?*/}}"
-	if [[ -n $directory ]]; then
-		# Store substituted string of trimmed time, history count
-		local temp="${${(%):-%t%!}## }"
-		# From the total width, subtract spaces, left-side length without working directory, (trimmed) time + space, and history count
-		# counts the spaces available for printing the working directory
-		local spacing=$(( COLUMNS - _prompt_statusline_length - $#temp - 1 ))
-		local length=$#directory
-		if (( length < spacing )); then
-			prompt_statusline_draw -l 4 7 $directory
-		else
-			# Shorten path as much as necessary
-			local dir_segment
-			prompt_statusline_draw -l 4 7
-			for dir_segment in "${(@s:/:)directory:h}"; do
-				if (( length > spacing )); then
-					echo -n "$dir_segment[1]/"
-					(( length -= $#dir_segment - 1 ))
-				else
-					echo -n "$dir_segment/"
-				fi
-			done
-			echo -n "${directory:t}"
-		fi
-	fi
-	# ${param:-value} means use param if non-zero length, else value
-	# (%) means expand % params
-	# ${(C)__string__} capitalizes the first character of each word, zsh style
-}
-
-function prompt_statusline_prompt {
+function prompt_statusline {
 	local retval=$?
 	local -a left right single
 	zparseopts l=left -left=left \
 		r=right -right=right \
 		s=single -single=single
-	if [[ -n $single ]]; then
-		# Draw PS1 single-line
-		if [[ -n $left ]]; then
-			prompt_statusline_left_status $retval
-			prompt_statusline_left_user
-			[[ -n $_prompt_statusline_git ]] && prompt_statusline_left_git
-			prompt_statusline_left_dir
-			prompt_statusline_draw -e
 
-		# Draw RPS1 single-line
-		elif [[ -n $right ]]; then
-			prompt_statusline_draw -s
-			[[ -n $_prompt_statusline_git ]] && prompt_statusline_right_git
-			prompt_statusline_right_machine
-		fi
-
-	# Draw PS1
-	elif [[ -n $left ]]; then
-		# Pad background for tmux prompt manually, due to lack of %E support
-		[[ -n $TMUX ]] && echo -n "%K{$_prompt_statusline_bg[1]}${(l:$COLUMNS:: :)}%k%{$(echotc LEFT $COLUMNS)%}"
-		prompt_statusline_left_status $retval
-		prompt_statusline_left_user
-		[[ -n $_prompt_statusline_git ]] && prompt_statusline_left_git
-		prompt_statusline_left_dir
+	if [[ -n "$left" ]]; then
+		[[ -z "$single" && -n "$TMUX" ]] && echo -n "%K{$_prompt_statusline_bg[1]}${(l:$COLUMNS:: :)}%k%{$(echotc LEFT $COLUMNS)%}"
+		prompt_statusline_segments -r $_prompt_statusline_right_segments > /dev/null 2>&1
+		_prompt_statusline_bg[4]=''
+		prompt_statusline_segments -l $_prompt_statusline_left_segments
 		prompt_statusline_draw -e
-		# Clear to EOL if not in tmux
-		[[ -z $TMUX ]] && echo -n '%E'
+		[[ -z "$TMUX$single" ]] && echo -n '%E'
 
-	# Draw RPS1
 	elif [[ -n $right ]]; then
 		prompt_statusline_draw -s
-		[[ -n $_prompt_statusline_git ]] && prompt_statusline_right_git
-		# print time, trimming leading spaces
-		prompt_statusline_draw -r 5 7 "${${(%):-%t}## }"
-		# print history number
-		prompt_statusline_draw -r $_prompt_statusline_bg[1] '' '!%F{4}%!'
-		prompt_statusline_right_machine
+		prompt_statusline_segments -nr $_prompt_statusline_right_segments
 	fi
 }
 
@@ -467,17 +481,21 @@ function prompt_statusline_setup {
 		_prompt_statusline_bg=(0 8 0)
 	fi
 
+	# Set single-line prompt
 	if [[ -n $single ]]; then
 		[[ -n $color ]] && print -P '%F{1}%UWarning%u%f: cannot set color (-c) when in single-line mode (-s)' >&2
 		_prompt_statusline_bg[3]="$_prompt_statusline_bg[2]"
+		_prompt_statusline_left_segments=(status user git-branch directory)
+		_prompt_statusline_right_segments=(git-status machine)
 		PROMPT="%{$(print $FX[none])%}"'
-$(prompt_statusline_prompt -sl)'"%{$(print $FX[none])%}"
-		RPROMPT="%{$terminfo[cuf1]%}"'$(prompt_statusline_prompt -sr)'"%{$(print $FX[none])$terminfo[cuf1]%}"
+$(prompt_statusline -sl)'"%{$(print $FX[none])%}"
+		RPROMPT="%{$terminfo[cuf1]%}"'$(prompt_statusline -sr)'"%{$(print $FX[none])$terminfo[cuf1]%}"
+
 	else
 		PROMPT="%{$(print $FX[none])%}"'
-$(prompt_statusline_prompt -l)
+$(prompt_statusline -l)
 $editor_info[keymap]'
-		RPROMPT='%{$terminfo[cuu1]$terminfo[cuf1]%}$(prompt_statusline_prompt -r)%{$(echotc DO 1)%}'
+		RPROMPT='%{$terminfo[cuu1]$terminfo[cuf1]%}$(prompt_statusline -r)%{$(echotc DO 1)%}'
 
 		if [[ -n $color ]]; then
 			_prompt_statusline_bg[3]=$1
