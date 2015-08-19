@@ -343,7 +343,7 @@ function prompt_statusline_precmd_async {
 
 function prompt_statusline_git_info {
 	# Append Git status.
-	if (( _prompt_statusline_precmd_async_pid > 0 )); then
+	if [[ _prompt_statusline_precmd_async_pid -gt 0 && -s $_prompt_statusline_precmd_async_data ]]; then
 		alias typeset='typeset -g'
 		source $_prompt_statusline_precmd_async_data
 		unalias typeset
