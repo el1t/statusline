@@ -37,7 +37,7 @@ _prompt_statusline_right_segments=(git-status clock history machine)
 #
 
 function prompt_statusline_draw {
-	local -a left right start end center diamond standalone no_draw
+	local -a left right start end center diamond standalone no_draw warning
 	local escape_sequences='%([BSUbfksu]|([FB]|){*})'
 	zparseopts -D l=left -left=left \
 		r=right -right=right \
@@ -46,7 +46,8 @@ function prompt_statusline_draw {
 		c=center -center=center \
 		d=diamond -diamond=diamond \
 		a=standalone -standalond=standalone \
-		n=no_draw -no-draw=no_draw
+		n=no_draw -no-draw=no_draw \
+		w=warning -warning=warning
 
 	# Begin a left segment
 	if [[ -n $left ]]; then
@@ -126,6 +127,9 @@ function prompt_statusline_draw {
 		[[ -n $4 ]] && echo -n "%K{$4}"
 		# Pad spaces
 		echo -n "${(l:$length:: :)}"
+
+	elif [[ -n $warning ]]; then
+		print -P "$(prompt_statusline_draw -a 4 7 Statusline)%F{1}%UWarning%u%f: $1" >&2
 	fi
 
 	#  Sample output 
@@ -275,7 +279,7 @@ function prompt_statusline_segments {
 				;;
 
 			(*)
-				echo "$0: $1 is not a valid segment!" >&2
+				prompt_statusline_draw -w "$1 is not a valid segment!"
 				;;
 		esac
 		shift
@@ -461,7 +465,9 @@ function prompt_statusline_setup {
 
 	# Set single-line prompt
 	if [[ -n $single ]]; then
-		[[ -n $color ]] && print -P '%F{1}%UWarning%u%f: cannot set color (-c) when in single-line mode (-s)' >&2
+		if [[ -n $color ]]; then
+			prompt_statusline_draw -w 'cannot set color (-c) when in single-line mode (-s)'
+		fi
 		_prompt_statusline_bg[3]="$_prompt_statusline_bg[2]"
 		_prompt_statusline_left_segments=(status user git-branch directory)
 		_prompt_statusline_right_segments=(git-status machine)
@@ -470,14 +476,13 @@ $(prompt_statusline -sl)'"%{$(print $FX[none])%}"
 		RPROMPT="%{$terminfo[cuf1]%}"'$(prompt_statusline -sr)'"%{$(print $FX[none])$terminfo[cuf1]%}"
 
 	else
+		if [[ -n $color ]]; then
+			_prompt_statusline_bg[3]=$color[2]
+		fi
 		PROMPT="%{$(print $FX[none])%}"'
 $(prompt_statusline -l)
 $editor_info[keymap]'
 		RPROMPT='%{$terminfo[cuu1]$terminfo[cuf1]%}$(prompt_statusline -r)%{$(echotc DO 1)%}'
-
-		if [[ -n $color ]]; then
-			_prompt_statusline_bg[3]=$1
-		fi
 	fi
 	if [[ -n $font ]]; then
 		case "$font[2]" in
@@ -493,6 +498,9 @@ $editor_info[keymap]'
 			(none)
 				_prompt_statusline_symbols=('' '' '' ''︎)
 				;;
+			(*)
+				prompt_statusline_draw -w "font type not found: $font[2]"
+				;;
 		esac
 	fi
 
@@ -507,10 +515,10 @@ $editor_info[keymap]'
 	# Editor styling
 	zstyle ':prezto:module:editor:info:completing' format '%B%F{1}...%f%b'
 	zstyle ':prezto:module:editor:info:keymap:primary' format \
-		"%F{4}%K{$_prompt_statusline_bg[1]}❯%K{$_prompt_statusline_bg[2]}%F{$_prompt_statusline_bg[1]}%f%k"
+		"%F{4}%K{$_prompt_statusline_bg[1]}❯%K{$_prompt_statusline_bg[2]}%F{$_prompt_statusline_bg[1]}$_prompt_statusline_symbols[4]%f%k"
 	zstyle ':prezto:module:editor:info:keymap:primary:overwrite' format ' %F{1}♺%f'
 	zstyle ':prezto:module:editor:info:keymap:alternate' format \
-		"%F{9}%K{$_prompt_statusline_bg[1]}❯%K{$_prompt_statusline_bg[2]}%F{$_prompt_statusline_bg[1]}%f%k"
+		"%F{9}%K{$_prompt_statusline_bg[1]}❯%K{$_prompt_statusline_bg[2]}%F{$_prompt_statusline_bg[1]}$_prompt_statusline_symbols[4]%f%k"
 
 	# Git-info styling
 	zstyle ':prezto:module:git:info' verbose 'yes'
