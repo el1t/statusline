@@ -10,7 +10,7 @@ _Disclaimer: oh-my-zsh version is not up to date._
 
 ### Prerequisites
 (The [prezto version's installer](prezto/) checks for and installs all prerequisites)
-- [Powerline-patched menlo font](setup/MenloforPowerline-Regular.otf) (optional, if --font option is used)
+- [Powerline-patched menlo font](setup/MenloforPowerline-Regular.otf) (optional, if `--font` option is used)
 - [Solarized light](setup/Solarized\ Light.terminal) or [solarized dark](setup/Solarized\ Dark.terminal) Terminal.app profiles
 - zsh `5.0.0+` and git `2.0.0+`
 

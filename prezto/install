@@ -6,19 +6,25 @@ if [[ $1 != '-f' && $1 != '--force' ]]; then
 	# Version check
 	min_zsh_version='5.0.0'
 	if ! autoload -Uz is-at-least || ! is-at-least $min_zsh_version; then
-		>&2 print "statusline: old shell detected, minimum supported: $min_zsh_version"
+		>&2 echo "statusline: old shell detected, minimum supported: $min_zsh_version"
 		read -q input \?'Continue anyways? [yn] '
 		echo
 		[[ $input == n ]] && exit || unset input
 		echo
 	fi
 	unset min_zsh_version
+	# OS check
+	if [[ "$OSTYPE" != darwin* ]]; then
+		print -P '%F{1}%UWarning%u%f: Mac-specific components (font location, terminal theme) will not be installed!'
+	fi
 	# Info
 	cat <<EOH
 This script will install the statusline prezto theme.
 It will also install/setup prezto and other requisites as needed.
 EOH
-	[[ -d ~/.oh-my-zsh/ ]] && print -P '%F{1}%UWarning%u%f: oh-my-zsh will be uninstalled'
+	if [[ -d ~/.oh-my-zsh/ ]]; then
+		print -P '%F{1}%UWarning%u%f: oh-my-zsh will be uninstalled'
+	fi
 	echo
 	read -q input\?'Continue? [yn] '
 	echo
@@ -86,11 +92,13 @@ fi
 
 # Enter statusline directory
 cd modules/prompt/external/statusline
-if [[ ! -s ~/Libary/Fonts/MenloforPowerline-Regular.otf ]]; then
-	print -P '%B>>> Installing Powerline-patched font (current user only)%b'
-	cp setup/MenloforPowerline-Regular.otf ~/Library/Fonts
-else
-	print -P '%B>>> Font already installed, skipping%b'
+if [[ "$OSTYPE" == darwin* ]]; then
+	if [[ ! -s ~/Libary/Fonts/MenloforPowerline-Regular.otf ]]; then
+		print -P '%B>>> Installing Powerline-patched font (current user only)%b'
+		cp setup/MenloforPowerline-Regular.otf ~/Library/Fonts
+	else
+		print -P '%B>>> Font already installed, skipping%b'
+	fi
 fi
 print -P '%B>>> Linking into prezto themes directory%b'
 ln -fs "$PWD/prezto/prompt_statusline_setup" ../../functions/
@@ -123,11 +131,12 @@ if [[ $input == y ]]; then
 else
 	input='Light'
 fi
-input="Solarized $input"
-# Set theme as default in Terminal.app
-# from https://github.com/mathiasbynens/dotfiles/blob/master/.osx
-cd -
-osascript <<EOD
+if [[ "$OSTYPE" == darwin* ]]; then
+	input="Solarized $input"
+	# Set theme as default in Terminal.app
+	# from https://github.com/mathiasbynens/dotfiles/blob/master/.osx
+	cd -
+	osascript <<EOD
 tell application "Terminal"
 	local allOpenedWindows
 	local initialOpenedWindows
@@ -155,6 +164,7 @@ tell application "Terminal"
 	end repeat
 end tell
 EOD
-unset input
+	unset input
+fi
 
 print -P '%B>>> Statusline has been successfully installed. Please restart zsh to view the theme.%b'
