@@ -392,17 +392,20 @@ You can invoke it thus:
 
 Set this theme with the following in your rc file:
 
-	zstyle ':prezto:module:prompt' theme 'statusline' [--color <color>] [--dark] [--single]
+	zstyle ':prezto:module:prompt' theme 'statusline' [-c|--color <color>] [-d|--dark] [-f|--font] [-s|--single]
 
 %BOPTIONS%b
 	-c, --color <color>
-		Set the statusbar background color
+		Set the statusbar background color. Does not work in single-line mode.
 
 	-d, --dark
-		Use the solarized dark theme
+		Apply the dark theme.
+
+	-f, --font <font>
+		Customize the special characters used for dividers. <font> may be powerline, legacy, blocks, or none.
 
 	-s, --single
-		Fit the prompt on a single line"
+		Fit the prompt to one line."
 }
 
 function prompt_statusline_preview {
@@ -443,10 +446,12 @@ function prompt_statusline_setup {
 	add-zsh-hook precmd prompt_statusline_precmd
 
 	# Customize theme
-	local -a dark color single
-	zparseopts -D d=dark -dark=dark \
-		c=color -color=color \
-		s=single -single=single
+	local -a dark color single font
+	zparseopts d=dark -dark=dark \
+		c:=color -color:=color \
+		s=single -single=single \
+		f:=font -font:=font
+
 
 	if [[ -n $dark ]]; then
 		_prompt_statusline_bg=(0 8 0)
@@ -473,6 +478,22 @@ $editor_info[keymap]'
 		if [[ -n $color ]]; then
 			_prompt_statusline_bg[3]=$1
 		fi
+	fi
+	if [[ -n $font ]]; then
+		case "$font[2]" in
+			(powerline)
+				_prompt_statusline_symbols=(⮂   ⮀)
+				;;
+			(legacy)
+				_prompt_statusline_symbols=(◀ '<' '>' ▶︎)
+				;;
+			(blocks)
+				_prompt_statusline_symbols=(◼ '|' '|' ◼︎)
+				;;
+			(none)
+				_prompt_statusline_symbols=('' '' '' ''︎)
+				;;
+		esac
 	fi
 
 	# Completion styling

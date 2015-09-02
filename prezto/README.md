@@ -37,13 +37,8 @@ zstyle ':prezto:load' pmodule \
 Run `prompt -s statusline` to enable the theme or run `prompt -h statusline` for more info. Happy theming!
 
 ## Customization
-You can customize the theme's appearance in `zpreztorc`:
-```zsh
-zstyle ':prezto:module:prompt' theme 'statusline'             # Default light theme
-zstyle ':prezto:module:prompt' theme 'statusline' --dark      # Solarized dark theme
-zstyle ':prezto:module:prompt' theme 'statusline' --color ''  # Transparent statusbar
-zstyle ':prezto:module:prompt' theme 'statusline' --single    # Single-line prompt
-```
+You can use these [options](#options) to customize the statusline's appearance in `zpreztorc` as follows: `zstyle ':prezto:module:prompt' theme 'statusline' <options>`
+
 Segments are easy to add and remove, just edit the following arrays:
 ```zsh
 _prompt_statusline_left_segments=(status user git-branch directory)
@@ -71,3 +66,19 @@ _prompt_statusline_right_segments=(git-status clock history machine)
 | directory  | current working directory | dynamically truncated        |
 | time       | 12-hour clock             | always                       |
 | history    | index in zsh history      | always                       |
+
+## Options
+| Option       | Parameters          | Description                    |
+| ------------ | ------------------- | ------------------------------ |
+| -c, --color  | Terminal color code | Set statusbar background color |
+| -d, --dark   | N/A                 | Apply dark theme               |
+| -f, --font   | See below           | Change special chars used      |
+| -s, --single | N/A                 | Fit the prompt to one line     |
+
+| Font Parameter | Characters |
+| -------------- | :--------: |
+| Powerline      |  ⮂   ⮀   |
+| Legacy         |  ◀ < > ▶︎   |
+| Block          |  ◼ \| \| ◼   |
+| None           |     N/A    |
+Run `prompt -h statusline` for more information.

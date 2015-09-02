@@ -5,11 +5,12 @@ Statusline
 
 ### A Powerline theme for prezto and oh-my-zsh
 Wish your prompt displayed more information, but afraid of cluttering your prompt? Statusline is a responsive zsh theme that provides informational segments when you need them. For example, statusline only displays your user and machine names when you are in a remote shell. Likewise, task runtimes are only shown when they exceed ten seconds, the current working directory is dynamically shortened to fit onscreen, and more! Statusline is designed for solarized, and is compatible with the default OS X Terminal.app.
+
 _Disclaimer: oh-my-zsh version is not up to date._
 
 ### Prerequisites
 (The [prezto version's installer](prezto/) checks for and installs all prerequisites)
-- [Powerline-patched menlo font](setup/MenloforPowerline-Regular.otf)
+- [Powerline-patched menlo font](setup/MenloforPowerline-Regular.otf) (optional, if --font option is used)
 - [Solarized light](setup/Solarized\ Light.terminal) or [solarized dark](setup/Solarized\ Dark.terminal) Terminal.app profiles
 - zsh `5.0.0+` and git `2.0.0+`
 
@@ -24,13 +25,14 @@ zsh -c "$(curl -fsSL https://raw.githubusercontent.com/el1t/statusline/master/pr
 [Manual installation](prezto/README.md)
 
 ### Features
-- *Asynchronous* git status loading
-- Task *runtime*
-- *Light* and *dark* themes
-- *Contextual* segments
-- Fully *modular* design
+- **Asynchronous** git status loading
+- Task **runtime**
+- **Light** and **dark** themes
+- **Contextual** segments
+- Fully **modular** design
 - Custom `PS1`, `RPS1`, `PS2`, `RPS2`, `PS3`, `PS4`, `SPROMPT`, and completion formatting
-- *Dual-* and *single-line* prompts
+- **Dual-** and **single-line** prompts
+- **Powerline** and **legacy font** support
 - *Tmux* compatible
 
 ### Segments
@@ -55,7 +57,25 @@ Run this to update prezto and all its submodules (including statusline):
 git -C ~/.zprezto pull --recurse-submodules && git -C ~/.zprezto submodule update --init --recursive
 ```
 
+## Options
+Set options in `zshrc` with `zstyle ':prezto:module:prompt' theme 'statusline' <options>`
+
+| Option       | Parameters          | Description                    |
+| ------------ | ------------------- | ------------------------------ |
+| -c, --color  | Terminal color code | Set statusbar background color |
+| -d, --dark   | N/A                 | Apply dark theme               |
+| -f, --font   | See below           | Change special chars used      |
+| -s, --single | N/A                 | Fit the prompt to one line     |
+
+| Font Parameter | Characters |
+| -------------- | :--------: |
+| Powerline      |  ⮂   ⮀   |
+| Legacy         |  ◀ < > ▶︎   |
+| Block          |  ◼ \| \| ◼   |
+| None           |     N/A    |
+Run `prompt -h statusline` for more information.
+
 ## [Oh-my-zsh](https://github.com/robbyrussell/oh-my-zsh)
 The [oh-my-zsh version](oh-my-zsh/statusline.zsh-theme) works without formatting errors found in the built-in agnoster theme, and has more git information and features compared to the original. I have attempted to optimize speed in large git repos. (In oh-my-zsh, make sure `DISABLE_UNTRACKED_FILES_DIRTY` is set to `true` in your `.zshrc` file for faster performance!)
 
-NOTE: Mercurial support is untested and only for the oh-my-zsh version. The custom patched characters can be replaced with typical powerline patched ones, if you so choose; just edit the `_prompt_statusline_separator` variables at the top of the script.
+NOTE: Mercurial support is untested and only for the oh-my-zsh version.
