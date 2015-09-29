@@ -36,7 +36,7 @@ _prompt_statusline_right_segments=(git-status clock history machine)
 # Segment drawing utility
 #
 
-function prompt_statusline_draw {
+prompt_statusline_draw() {
 	local -a left right start end center diamond standalone no_draw warning
 	local escape_sequences='%([BSUbfksu]|([FB]|){*})'
 	zparseopts -D l=left -left=left \
@@ -151,7 +151,7 @@ function prompt_statusline_draw {
 # Segment components
 #
 
-function prompt_statusline_segments {
+prompt_statusline_segments() {
 	local -a left right no_draw
 	zparseopts -D r=right -right=right \
 		l=left -left=left \
@@ -287,7 +287,7 @@ function prompt_statusline_segments {
 }
 
 # Output runtime of previous task
-function prompt_statusline_elapsed_time {
+prompt_statusline_elapsed_time() {
 	if [[ -n $_prompt_statusline_start_time ]]; then
 		local end_time=$(( SECONDS - _prompt_statusline_start_time ))
 		if (( end_time >= 10 )); then
@@ -309,7 +309,7 @@ function prompt_statusline_elapsed_time {
 }
 
 # Draw prompt(s)
-function prompt_statusline {
+prompt_statusline() {
 	local retval=$?
 	local -a left right single
 	zparseopts l=left -left=left \
@@ -334,7 +334,7 @@ function prompt_statusline {
 # Prezto setup functions
 #
 
-function prompt_statusline_precmd_async {
+prompt_statusline_precmd_async() {
 	# Get Git repository information.
 	if (( $+functions[git-info] )); then
 		git-info
@@ -345,7 +345,7 @@ function prompt_statusline_precmd_async {
 	kill -WINCH $$
 }
 
-function prompt_statusline_git_info {
+prompt_statusline_git_info() {
 	# Append Git status.
 	if [[ _prompt_statusline_precmd_async_pid -gt 0 && -s $_prompt_statusline_precmd_async_data ]]; then
 		alias typeset='typeset -g'
@@ -359,7 +359,7 @@ function prompt_statusline_git_info {
 	fi
 }
 
-function prompt_statusline_precmd {
+prompt_statusline_precmd() {
 	setopt LOCAL_OPTIONS
 	unsetopt XTRACE KSH_ARRAYS
 
@@ -383,11 +383,11 @@ function prompt_statusline_precmd {
 	fi
 }
 
-function prompt_statusline_preexec {
+prompt_statusline_preexec() {
 	_prompt_statusline_start_time=$SECONDS
 }
 
-function prompt_statusline_help {
+prompt_statusline_help() {
 	print -P \
 "This prompt supports solarized light and dark. Solarized light with a white statusbar on two lines is the default style.
 You can invoke it thus:
@@ -412,7 +412,7 @@ Set this theme with the following in your rc file:
 		Fit the prompt to one line."
 }
 
-function prompt_statusline_preview {
+prompt_statusline_preview() {
 	# Prevent changes from affecting default prompt
 	local +h PROMPT=''
 	local +h RPROMPT=''
@@ -435,7 +435,7 @@ function prompt_statusline_preview {
 
 # %s = undo standout, %u = remove underline, %b = unbold, %f = default foreground, %k = default background
 # %S = standout, %U = underline, %B = bold, %F = fg (text) color, %K = bg color, %E = clear to end of line
-function prompt_statusline_setup {
+prompt_statusline_setup() {
 	setopt LOCAL_OPTIONS
 	unsetopt XTRACE KSH_ARRAYS
 	prompt_opts=(cr percent subst)
