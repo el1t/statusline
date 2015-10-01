@@ -82,7 +82,7 @@ prompt_status() {
 prompt_virtualenv() {
 	local virtualenv_path="$VIRTUAL_ENV"
 	if [[ -n $virtualenv_path && -n $VIRTUAL_ENV_DISABLE_PROMPT ]]; then
-		local output = "(`basename $virtualenv_path`)"
+		local output = "$(basename $virtualenv_path)"
 		prompt_segment blue black $output
 		(( STATUSBAR_LENGTH += $#output ))
 	fi
@@ -173,10 +173,10 @@ prompt_hg() {
 			st=""
 			rev=$(hg id -n 2>/dev/null | sed 's/[^-0-9]//g')
 			branch=$(hg id -b 2>/dev/null)
-			if `hg st | grep -q "^\?"`; then
+			if $(hg st | grep -q "^\?"); then
 				prompt_segment red black
 				st='±'
-			elif `hg st | grep -q "^(M|A)"`; then
+			elif $(hg st | grep -q "^(M|A)"); then
 				prompt_segment yellow black
 				st='±'
 			else

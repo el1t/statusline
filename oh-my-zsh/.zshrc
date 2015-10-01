@@ -7,8 +7,8 @@ ZSH=$HOME/.oh-my-zsh
 # time that oh-my-zsh is loaded.
 ZSH_THEME="agnostermod"
 
-# Equivalent to `whoami`
-DEFAULT_USER=`id -un`
+# Equivalent to $(whoami)
+DEFAULT_USER=$(id -un)
 
 setopt AUTO_CD
 setopt HIST_IGNORE_SPACE
