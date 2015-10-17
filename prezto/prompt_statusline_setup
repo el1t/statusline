@@ -317,7 +317,7 @@ prompt_statusline() {
 		s=single -single=single
 
 	if [[ -n "$left" ]]; then
-		[[ -z "$single" && -n "$TMUX" ]] && echo -n "%K{$_prompt_statusline_bg[1]}${(l:$COLUMNS:: :)}%k%{$(echotc LEFT $COLUMNS)%}"
+		[[ -z "$single" && -n "$TMUX" ]] && echo -n "%K{$_prompt_statusline_bg[1]}%{${(l:$COLUMNS:: :)}%}%k%{$(echotc LEFT $COLUMNS)%}"
 		prompt_statusline_segments -n $_prompt_statusline_right_segments
 		_prompt_statusline_bg[4]=''
 		prompt_statusline_segments -l $_prompt_statusline_left_segments
