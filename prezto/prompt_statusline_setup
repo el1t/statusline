@@ -322,7 +322,11 @@ prompt_statusline() {
 		_prompt_statusline_bg[4]=''
 		prompt_statusline_segments -l $_prompt_statusline_left_segments
 		prompt_statusline_draw -e
-		[[ -z "$TMUX$single" ]] && echo -n '%E'
+		if [[ -n "$single" ]]; then
+			echo -n '%k'
+		elif [[ -z "$TMUX" ]]
+			echo -n '%E'
+		fi
 
 	elif [[ -n $right ]]; then
 		prompt_statusline_draw -s
@@ -470,8 +474,8 @@ prompt_statusline_setup() {
 		fi
 		_prompt_statusline_bg[3]="$_prompt_statusline_bg[2]"
 		PROMPT="%{$(print $FX[none])%}"'
-$(prompt_statusline -sl)'"%{$(print $FX[none])%}"
-		RPROMPT="%{$terminfo[cuf1]%}"'$(prompt_statusline -sr)'"%{$(print $FX[none])$terminfo[cuf1]%}"
+$(prompt_statusline -sl)'
+		RPROMPT="%{$terminfo[cuf1]%}"'$(prompt_statusline -sr)'"%{$terminfo[cuf1]%}"
 
 	else
 		if [[ -n $color ]]; then
