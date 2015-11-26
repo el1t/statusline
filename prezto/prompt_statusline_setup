@@ -324,7 +324,7 @@ prompt_statusline() {
 		prompt_statusline_draw -e
 		if [[ -n "$single" ]]; then
 			echo -n '%k'
-		elif [[ -z "$TMUX" ]]
+		elif [[ -z "$TMUX" ]]; then
 			echo -n '%E'
 		fi
 
