@@ -10,7 +10,7 @@ _Disclaimer: oh-my-zsh version is not up to date._
 
 ### Prerequisites
 (The [prezto version's installer](prezto/) checks for and installs all prerequisites)
-- [Powerline-patched menlo font](setup/MenloforPowerline-Regular.otf) (optional, if `--font` option is used)
+- [Powerline-patched menlo font](setup/MenloforPowerline-Regular.otf) (optional, see `--font` option)
 - [Solarized light](setup/Solarized\ Light.terminal) or [solarized dark](setup/Solarized\ Dark.terminal) Terminal.app profiles
 - zsh `5.0.0+` and git `2.0.0+`
 
@@ -33,7 +33,7 @@ zsh -c "$(curl -fsSL https://raw.githubusercontent.com/el1t/statusline/master/pr
 - Custom `PS1`, `RPS1`, `PS2`, `RPS2`, `PS3`, `PS4`, `SPROMPT`, and completion formatting
 - **Dual-** and **single-line** prompts
 - **Powerline** and **legacy font** support
-- *Tmux* compatible
+- Tmux compatible
 
 ### Segments
 | Name       | Description               | Context                      |
@@ -48,13 +48,13 @@ zsh -c "$(curl -fsSL https://raw.githubusercontent.com/el1t/statusline/master/pr
 | history    | index in zsh history      | always                       |
 
 #### Directory truncation?
-When the length of the working directory exceeds that of the terminal, subdirectories up to (but not including) the tail directory are shortened to their first letter. Note that only the minimum number of directories necessary are shortened.
+When the length of the working directory exceeds that of the terminal, subdirectories up to (but not including) the tail directory are shortened to their first letter. In order to use this, **directory must be last in the left-hand prompt**. Note that only the minimum number of directories necessary are shortened.
 ![Truncation](images/truncation.png)
 
 ### Updating
 Run this to update prezto and all its submodules (including statusline):
 ```sh
-git -C ~/.zprezto pull --recurse-submodules && git -C ~/.zprezto submodule update --init --recursive
+git -C ~/.zprezto submodule foreach git pull origin master && git -C ~/.zprezto submodule foreach "(git checkout master; git pull)&"
 ```
 
 ## Options
@@ -69,10 +69,10 @@ Set options in `zshrc` with `zstyle ':prezto:module:prompt' theme 'statusline' <
 
 | Font Parameter | Characters |
 | -------------- | :--------: |
-| Powerline      |  ⮂   ⮀   |
-| Legacy         |  ◀ < > ▶︎   |
-| Block          |  ◼ \| \| ◼   |
-| None           |     N/A    |
+| powerline      |  ⮂   ⮀   |
+| legacy         |  ◀ < > ▶︎   |
+| block          |  ◼ \| \| ◼   |
+| none           |     N/A    |
 Run `prompt -h statusline` for more information.
 
 ## [Oh-my-zsh](https://github.com/robbyrussell/oh-my-zsh)

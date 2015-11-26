@@ -128,6 +128,7 @@ prompt_statusline_draw() {
 		# Pad spaces
 		echo -n "${(l:$length:: :)}"
 
+	# Output a warning
 	elif [[ -n $warning ]]; then
 		print -P "$(prompt_statusline_draw -a 4 7 Statusline)%F{1}%UWarning%u%f: $1" >&2
 	fi

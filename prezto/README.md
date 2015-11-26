@@ -7,13 +7,13 @@ This version is more optimized than the oh-my-zsh version, and features more seg
 ```zsh
 zsh -c "$(curl -fsSL https://raw.githubusercontent.com/el1t/statusline/master/prezto/install)"
 ```
-[install](install) will install statusline, prezto, and other requisites as needed.
+[install](install) will install statusline, prezto, and other dependencies as needed.
 
 ### Manual
-#### Prerequisites
- - zsh `5.0.0+` and git `2.0.0+`
- - Install [this font](setup/MenloforPowerline-Regular.otf) in your terminal
- - Recommended: Install a [solarized light](setup/Solarized\ Light.terminal) or [solarized dark](setup/Solarized\ Dark.terminal) Terminal.app profile
+#### Prerequisites (for best results)
+- [Custom Powerline menlo font](setup/MenloforPowerline-Regular.otf), or a powerline-patched font (see `--font`)
+- [Solarized light](setup/Solarized\ Light.terminal) or [solarized dark](setup/Solarized\ Dark.terminal) Terminal.app profiles
+- zsh `5.0.0+` and git `2.0.0+`
 
 #### Theme files
 To move `prompt_statusline_setup` to your prezto installation folder, run
@@ -45,15 +45,16 @@ _prompt_statusline_left_segments=(status user git-branch directory)
 _prompt_statusline_right_segments=(git-status clock history machine)
 ```
 
-## Features
-- *Asynchronous* git status loading
-- Task *runtime*
-- *Light* and *dark* themes
-- *Contextual* segments
-- Fully *modular* design
+### Features
+- **Asynchronous** git status loading
+- Task **runtime**
+- **Light** and **dark** themes
+- **Contextual** segments
+- Fully **modular** design
 - Custom `PS1`, `RPS1`, `PS2`, `RPS2`, `PS3`, `PS4`, `SPROMPT`, and completion formatting
-- *Dual-* and *single-line* prompts
-- *Tmux* compatible
+- **Dual-** and **single-line** prompts
+- **Powerline** and **legacy font** support
+- Tmux compatible
 
 ## Segments
 | Name       | Description               | Context                      |
@@ -77,8 +78,8 @@ _prompt_statusline_right_segments=(git-status clock history machine)
 
 | Font Parameter | Characters |
 | -------------- | :--------: |
-| Powerline      |  ⮂   ⮀   |
-| Legacy         |  ◀ < > ▶︎   |
-| Block          |  ◼ \| \| ◼   |
-| None           |     N/A    |
+| powerline      |  ⮂   ⮀   |
+| legacy         |  ◀ < > ▶︎   |
+| block          |  ◼ \| \| ◼   |
+| none           |     N/A    |
 Run `prompt -h statusline` for more information.
