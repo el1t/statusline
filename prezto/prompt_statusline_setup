@@ -469,8 +469,6 @@ prompt_statusline_setup() {
 			prompt_statusline_draw -w 'cannot set color (-c) when in single-line mode (-s)'
 		fi
 		_prompt_statusline_bg[3]="$_prompt_statusline_bg[2]"
-		_prompt_statusline_left_segments=(status user git-branch directory)
-		_prompt_statusline_right_segments=(git-status machine)
 		PROMPT="%{$(print $FX[none])%}"'
 $(prompt_statusline -sl)'"%{$(print $FX[none])%}"
 		RPROMPT="%{$terminfo[cuf1]%}"'$(prompt_statusline -sr)'"%{$(print $FX[none])$terminfo[cuf1]%}"
