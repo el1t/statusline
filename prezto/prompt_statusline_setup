@@ -220,19 +220,19 @@ prompt_statusline_segments() {
 					if [[ -n $git_info[rprompt] ]]; then
 						case $git_info[action] in
 							(apply)
-								prompt_statusline_draw -r $_prompt_statusline_bg[1] '' '<A<'
+								prompt_statusline_draw $draw_options $_prompt_statusline_bg[1] '' '<A<'
 								;;
 							(bisect)
-								prompt_statusline_draw -r $_prompt_statusline_bg[1] '' '<B>'
+								prompt_statusline_draw $draw_options $_prompt_statusline_bg[1] '' '<B>'
 								;;
 							(cherry-pick|cherry-pick-sequence)
-								prompt_statusline_draw -r $_prompt_statusline_bg[1] '' '<C<'
+								prompt_statusline_draw $draw_options $_prompt_statusline_bg[1] '' '<C<'
 								;;
 							(merge)
-								prompt_statusline_draw -r $_prompt_statusline_bg[1] '' '>M<'
+								prompt_statusline_draw $draw_options $_prompt_statusline_bg[1] '' '>M<'
 								;;
 							(rebase|rebase-interactive|rebase-merge)
-								prompt_statusline_draw -r $_prompt_statusline_bg[1] '' '>R>'
+								prompt_statusline_draw $draw_options $_prompt_statusline_bg[1] '' '>R>'
 								;;
 						esac
 						prompt_statusline_draw $draw_options $_prompt_statusline_bg[1] '' $git_info[rprompt]
@@ -352,7 +352,7 @@ prompt_statusline_precmd_async() {
 
 prompt_statusline_git_info() {
 	# Append Git status.
-	if [[ _prompt_statusline_precmd_async_pid -gt 0 && -s $_prompt_statusline_precmd_async_data ]]; then
+	if [[ $_prompt_statusline_precmd_async_pid -gt 0 && -s $_prompt_statusline_precmd_async_data ]]; then
 		alias typeset='typeset -g'
 		source $_prompt_statusline_precmd_async_data
 		unalias typeset
@@ -373,7 +373,7 @@ prompt_statusline_precmd() {
 
 	# Kill the old process of slow commands if it is still running.
 	if (( _prompt_statusline_precmd_async_pid > 0 )); then
-		kill -KILL $_prompt_statusline_precmd_async_pid &>/dev/null
+		kill -KILL $_prompt_statusline_precmd_async_pid &> /dev/null
 	fi
 
 	# Split off async task to check git status if in git repo
