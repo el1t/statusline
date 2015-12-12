@@ -204,11 +204,11 @@ prompt_statusline_segments() {
 						# Declaring this inside the if statement would not be local
 						local git_output="${(e)git_info[prompt]}"
 						if [[ -n $git_output ]]; then
-							prompt_statusline_draw -l $git_info[bg] 7 $git_output
+							prompt_statusline_draw $draw_options $git_info[bg] 7 $git_output
 						fi
 					else
 						# Display placeholder for async, gray color
-						prompt_statusline_draw -l 14 0 ' ...   '
+						prompt_statusline_draw $draw_options 14 0 ' ...   '
 					fi
 				fi
 				;;
@@ -541,8 +541,7 @@ $editor_info[keymap]'
 	zstyle ':prezto:module:git:info:keys' format \
 		'prompt' '$(coalesce "%b" "%p" "%c")%s' \
 		'rprompt' '%A%B%S%a%d%r%U' \
-		'bg' '$(coalesce "%u" "%m" "2")' \
-		'untracked' '%u'
+		'bg' '$(coalesce "%u" "%m" "2")'
 
 	# Secondary prompt, printed when the shell needs more information to complete a command
 	PS2="%F{6}%K{$_prompt_statusline_bg[1]}❯%k%F{$_prompt_statusline_bg[1]}$_prompt_statusline_symbols[4]%f"
