@@ -1,7 +1,5 @@
 Statusline for Prezto
 ===========
-This version is more optimized than the oh-my-zsh version, and features more segments and information.
-
 ## Installation
 ### Automatic
 ```zsh
