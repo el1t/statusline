@@ -212,8 +212,8 @@ prompt_statusline_segments() {
 			# Git: format action, output other statuses defined in git_info[rprompt]
 			(git-status)
 				# If async has finished
-				if [[ -n "$_prompt_statusline_git && $_prompt_statusline_precmd_async_pid -eq 0 ]]; then
-					if [[ -n "$git_info[rprompt] ]]; then
+				if [[ -n "$_prompt_statusline_git" && "$_prompt_statusline_precmd_async_pid" -eq 0 ]]; then
+					if [[ -n "$git_info[rprompt]" ]]; then
 						case $git_info[action] in
 							(apply)
 								prompt_statusline_draw "$draw_options" "$_prompt_statusline_bg[1]" '' '<A<'
@@ -315,9 +315,9 @@ prompt_statusline() {
 
 	if [[ -n "$left" ]]; then
 		[[ -z "$single" && -n "$TMUX" ]] && echo -n "%K{$_prompt_statusline_bg[1]}%{${(l:$COLUMNS:: :)}%}%k%{$(echotc LEFT $COLUMNS)%}"
-		prompt_statusline_segments -n "$_prompt_statusline_right_segments"
+		prompt_statusline_segments -n $_prompt_statusline_right_segments
 		_prompt_statusline_bg[4]=''
-		prompt_statusline_segments -l "$_prompt_statusline_left_segments"
+		prompt_statusline_segments -l $_prompt_statusline_left_segments
 		prompt_statusline_draw -e
 		if [[ -n "$single" ]]; then
 			echo -n '%k'
@@ -327,7 +327,7 @@ prompt_statusline() {
 
 	elif [[ -n "$right" ]]; then
 		prompt_statusline_draw -s
-		prompt_statusline_segments -r "$_prompt_statusline_right_segments"
+		prompt_statusline_segments -r $_prompt_statusline_right_segments
 	fi
 }
 
