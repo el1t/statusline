@@ -490,7 +490,7 @@ $editor_info[keymap]'
 	if [[ -n $font ]]; then
 		case "$font[2]" in
 			(powerline)
-				_prompt_statusline_symbols=(⮂   ⮀)
+				_prompt_statusline_symbols=(⮂ ⮃ ⮁ ⮀)
 				;;
 			(legacy)
 				_prompt_statusline_symbols=(◀ '<' '>' ▶︎)
