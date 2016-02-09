@@ -106,16 +106,25 @@ ln -fs "$PWD/prezto/prompt_statusline_setup" ../../functions/
 # Replace current prezto theme in settings
 cd ../../../../runcoms
 print -P '%B>>> Adding theme to zpreztorc%b'
-sed -i '' $'/zstyle \':prezto:module:prompt\' theme/c\\
+if [[ "$OSTYPE" == darwin* ]]; then
+	# Change line
+	sed -i '' $'/zstyle \':prezto:module:prompt\' theme/c\\
 zstyle \':prezto:module:prompt\' theme \'statusline\'
 ' zpreztorc
+else
+	sed -i '' $'/zstyle \':prezto:module:prompt\' theme/c\\zstyle \':prezto:module:prompt\' theme \'statusline\'' zpreztorc
+fi
 
 # Add git plugin if necessary
 if ! grep -q "'git' \\\\" zpreztorc ; then
 	print -P '%B>>> Adding git plugin to zpreztorc%b'
-	sed -i '' $'/\'completion\' \\\\/a\\
-\\ \\ \'git\' \\\\
+	if [[ "$OSTYPE" == darwin* ]]; then
+		sed -i '' $'/\'completion\' \\\\/a\\
+\\  \'git\' \\\\
 ' zpreztorc
+	else
+		sed -i '' $'\'completion\' \\\\/a\\\\  \'git\' \\\\' zpreztorc
+	fi
 fi
 
 read -q input\?'Use single-line prompt? (default 2-line, recommended) [yn]'
