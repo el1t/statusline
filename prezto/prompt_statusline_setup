@@ -45,7 +45,7 @@ prompt_statusline_draw() {
 		e=end -end=end \
 		c=center -center=center \
 		d=diamond -diamond=diamond \
-		a=standalone -standalond=standalone \
+		a=standalone -standalone=standalone \
 		n=no_draw -no-draw=no_draw \
 		w=warning -warning=warning
 
@@ -476,7 +476,8 @@ prompt_statusline_setup() {
 		_prompt_statusline_bg[3]="$_prompt_statusline_bg[2]"
 		PROMPT="%{$(print $FX[none])%}"'
 $(prompt_statusline -sl)'
-		RPROMPT="%{$terminfo[cuf1]%}"'$(prompt_statusline -sr)'"%{$terminfo[cuf1]%}"
+		RPROMPT="%{$terminfo[cuf1]%}"'$(prompt_statusline -sr)'
+		[[ -n "$TMUX" ]] && RPROMPT+="%{$terminfo[cub1]%}" || RPROMPT+="%{$terminfo[cuf1]%}"
 
 	else
 		if [[ -n $color ]]; then
@@ -485,7 +486,7 @@ $(prompt_statusline -sl)'
 		PROMPT="%{$(print $FX[none])%}"'
 $(prompt_statusline -l)
 $editor_info[keymap]'
-		RPROMPT='%{$terminfo[cuu1]$terminfo[cuf1]%}$(prompt_statusline -r)%{$(echotc DO 1)%}'
+		RPROMPT="%{$terminfo[cuu1]$terminfo[cuf1]%}"'$(prompt_statusline -r)'"%{$(echotc DO 1)%}"
 	fi
 	if [[ -n $font ]]; then
 		case "$font[2]" in
