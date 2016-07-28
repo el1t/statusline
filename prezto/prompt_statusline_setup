@@ -25,12 +25,12 @@
 pmodload 'helper'
 
 # Global vars/constants
-_prompt_statusline_length=0
+typeset -i _prompt_statusline_length=0
 _prompt_statusline_git=''
 _prompt_statusline_bg=(7 15 7 '') # foreground, background, middle, current
 _prompt_statusline_symbols=(   )
 _prompt_statusline_left_segments=(status user git-branch directory)
-_prompt_statusline_right_segments=(git-status clock history machine)
+_prompt_statusline_right_segments=(git-status virtualenv clock history machine)
 
 #
 # Segment drawing utility
@@ -271,6 +271,14 @@ prompt_statusline_segments() {
 				fi
 				;;
 
+			(virtualenv)
+				if [[ -n "$python_info[virtualenv]" ]]; then
+					if (( _prompt_statusline_precmd_async_pid == 0 )); then
+						prompt_statusline_draw $draw_options 6 7 "$python_info[virtualenv]"
+					fi
+				fi
+				;;
+
 			(clock)
 				prompt_statusline_draw $draw_options 5 7 "${${(%%):-%t}## }"
 				;;
@@ -290,7 +298,7 @@ prompt_statusline_segments() {
 # Output runtime of previous task
 prompt_statusline_elapsed_time() {
 	if [[ -n $_prompt_statusline_start_time ]]; then
-		local end_time=$(( SECONDS - _prompt_statusline_start_time ))
+		local -i end_time=$(( SECONDS - _prompt_statusline_start_time ))
 		if (( end_time >= 10 )); then
 			local -a output
 			if (( end_time >= 60 )); then
@@ -386,6 +394,10 @@ prompt_statusline_precmd() {
 	else
 		unset _prompt_statusline_git
 	fi
+
+	if (( $+functions[python-info] )); then
+		python-info
+	fi
 }
 
 prompt_statusline_preexec() {
@@ -432,9 +444,13 @@ prompt_statusline_preview() {
 	if (( # > 0 )); then
 		prompt_preview_theme statusline "$@"
 	else
-		prompt_preview_theme statusline light
-		print "$FX[none]"
-		prompt_preview_theme statusline dark
+		prompt_preview_theme statusline
+		echo "$FX[none]"
+		prompt_preview_theme statusline --dark
+		echo "$FX[none]"
+		prompt_preview_theme statusline --single
+		echo "$FX[none]"
+		prompt_preview_theme statusline --font powerline
 	fi
 }
 
@@ -442,9 +458,9 @@ prompt_statusline_preview() {
 # %S = standout, %U = underline, %B = bold, %F = fg (text) color, %K = bg color, %E = clear to end of line
 prompt_statusline_setup() {
 	setopt LOCAL_OPTIONS
-	unsetopt XTRACE KSH_ARRAYS
+	unsetopt XTRACE KSH_ARRAYS SHWORDSPLIT
 	prompt_opts=(cr percent subst)
-	_prompt_statusline_precmd_async_pid=0
+	typeset -i _prompt_statusline_precmd_async_pid=0
 	_prompt_statusline_precmd_async_data="${TMPPREFIX}-prompt_statusline_data"
 
 	# Load required functions
@@ -496,17 +512,20 @@ $editor_info[keymap]'
 			(legacy)
 				_prompt_statusline_symbols=(◀ '<' '>' ▶︎)
 				;;
-			(blocks)
+			(block*)
 				_prompt_statusline_symbols=(◼ '|' '|' ◼︎)
 				;;
 			(none)
-				_prompt_statusline_symbols=('' '' '' ''︎)
+				_prompt_statusline_symbols=('' '' '' '')
 				;;
 			(*)
 				prompt_statusline_draw -w "font type not found: $font[2]"
 				;;
 		esac
 	fi
+
+	# Virtualenv styling
+	zstyle ':prezto:module:python:info:virtualenv' format '%v'
 
 	# Completion styling
 	zstyle ':completion:*:corrections' format "$(prompt_statusline_draw -a 2 7 '%d (errors: %e)')"
@@ -560,4 +579,4 @@ $editor_info[keymap]'
 }
 
 prompt_statusline_setup "$@"
-# vim: set ft=sh
+# vim: set ft=sh :
