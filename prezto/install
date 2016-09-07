@@ -1,34 +1,29 @@
 #!/bin/zsh
-local input=
+local input
 
-if [[ $1 != '-f' && $1 != '--force' ]]; then
+if [[ "$1" != '-f' && "$1" != '--force' ]]; then
 	clear
 	# Version check
-	min_zsh_version='5.0.0'
-	if ! autoload -Uz is-at-least || ! is-at-least $min_zsh_version; then
+	local min_zsh_version='5.0.0'
+	if ! autoload -Uz is-at-least || ! is-at-least "$min_zsh_version"; then
 		>&2 echo "statusline: old shell detected, minimum supported: $min_zsh_version"
 		read -q input \?'Continue anyways? [yn] '
 		echo
-		[[ $input == n ]] && exit || unset input
+		if [[ "$input" == 'n' ]] exit
 		echo
 	fi
-	unset min_zsh_version
 	# OS check
-	if [[ "$OSTYPE" != darwin* ]]; then
-		print -P '%F{1}%UWarning%u%f: Mac-specific components (font location, terminal theme) will not be installed!'
-	fi
+	if [[ "$OSTYPE" != darwin* ]] print -P '%F{1}%UWarning%u%f: Mac-specific components (font location, terminal theme) will not be installed!'
 	# Info
 	cat <<EOH
 This script will install the statusline prezto theme.
 It will also install/setup prezto and other requisites as needed.
 EOH
-	if [[ -d ~/.oh-my-zsh/ ]]; then
-		print -P '%F{1}%UWarning%u%f: oh-my-zsh will be uninstalled'
-	fi
+	if [[ -d ~/.oh-my-zsh/ ]] print -P '%F{1}%UWarning%u%f: oh-my-zsh will be uninstalled'
 	echo
 	read -q input\?'Continue? [yn] '
 	echo
-	[[ $input == n ]] && exit || unset input
+	if [[ "$input" == 'n' ]] exit
 	echo
 fi
 
@@ -40,7 +35,7 @@ if [[ -d ~/.oh-my-zsh/ ]]; then
 	if (( $+functions[uninstall_oh_my_zsh] )); then
 		uninstall_oh_my_zsh
 		# Detect if oh-my-zsh uninstall switched to bash
-		if [[ ${$(sh -c 'echo $SHELL'):t} != 'zsh' ]]; then
+		if [[ "${$(sh -c 'echo $SHELL'):t}" != 'zsh' ]]; then
 			print -P '%B>>> Switching back to zsh%b'
 			chsh -s /bin/zsh
 			# If oh-my-zsh switches to bash, it leaves a dirty .zshrc
@@ -63,21 +58,21 @@ if [[ ! -d "${ZDOTDIR:-$HOME}/.zprezto/" ]]; then
 	print -P '%B>>> Installing prezto%b'
 	git clone --recursive https://github.com/sorin-ionescu/prezto.git "${ZDOTDIR:-$HOME}/.zprezto"
 	print -P '%B>>> Setting up zsh config files%b'
-	setopt EXTENDED_GLOB
+	setopt LOCAL_OPTIONS EXTENDED_GLOB
+	local rcfile
 	for rcfile in "${ZDOTDIR:-$HOME}"/.zprezto/runcoms/^README.md(.N); do
 		# Append original to prezto version
 		local input="${ZDOTDIR:-$HOME}/.${rcfile:t}"
-		local output=$rcfile
-		if [[ -s $input && -w $output ]]; then
-			echo "Appending $input to $output"
-			echo "\n#\n# Imported from $input\n#\n" >> $output
-			cat $input >> $output
+		if [[ -s "$input" && -w "$rcfile" ]]; then
+			echo "Appending $input to $rcfile"
+			echo "\n#\n# Imported from $input\n#\n" >> "$rcfile"
+			cat "$input" >> "$rcfile"
 			[[ ! -d "${ZDOTDIR:-$HOME}/backup_runcoms/" ]] && mkdir "${ZDOTDIR:-$HOME}/backup_runcoms/"
-			mv $input "$input.prezto-backup"
+			mv "$input" "${input}.prezto-backup"
 		fi
 		# Link prezto version to original
-		echo "Linking $output to $input"
-		ln -s $output $input
+		echo "Linking $rcfile to $input"
+		ln -s "$rcfile" "$input"
 	done
 fi
 
@@ -108,35 +103,43 @@ cd ../../../../runcoms
 print -P '%B>>> Adding theme to zpreztorc%b'
 if [[ "$OSTYPE" == darwin* ]]; then
 	# Change line
-	sed -i '' $'/zstyle \':prezto:module:prompt\' theme/c\\
-zstyle \':prezto:module:prompt\' theme \'statusline\'
-' zpreztorc
+	sed -i '' "/zstyle ':prezto:module:prompt' theme/c\\
+zstyle ':prezto:module:prompt' theme 'statusline'
+" zpreztorc
 else
-	sed -i '' $'/zstyle \':prezto:module:prompt\' theme/c\\zstyle \':prezto:module:prompt\' theme \'statusline\'' zpreztorc
+	sed -i "/zstyle ':prezto:module:prompt' theme/c\\zstyle ':prezto:module:prompt' theme 'statusline'" zpreztorc
 fi
 
 # Add git plugin if necessary
 if ! grep -q "'git' \\\\" zpreztorc ; then
 	print -P '%B>>> Adding git plugin to zpreztorc%b'
 	if [[ "$OSTYPE" == darwin* ]]; then
-		sed -i '' $'/\'completion\' \\\\/a\\
-\\  \'git\' \\\\
-' zpreztorc
+		sed -i '' "/'completion' \\\\/a\\
+\\  'git' \\\\
+" zpreztorc
 	else
-		sed -i '' $'\'completion\' \\\\/a\\\\  \'git\' \\\\' zpreztorc
+		sed -i "'completion' \\\\/a\\\\  'git' \\\\" zpreztorc
 	fi
 fi
 
 read -q input\?'Use single-line prompt? (default 2-line, recommended) [yn]'
 echo
-if [[ $input == y ]]; then
-	sed -i '' "s/'statusline'/'statusline' -s/" zpreztorc
+if [[ "$input" == 'y' ]]; then
+	if [[ "$OSTYPE" == darwin* ]]; then
+		sed -i '' "s/'statusline'/'statusline' -s/" zpreztorc
+	else
+		sed -i "s/'statusline'/'statusline' -s/" zpreztorc
+	fi
 fi
 read -q input\?'Use dark theme? (default Solarized Light) [yn] '
 echo
-if [[ $input == y ]]; then
+if [[ "$input" == 'y' ]]; then
 	input='Dark'
-	sed -i '' "s/'statusline'/'statusline' -d/" zpreztorc
+	if [[ "$OSTYPE" == darwin* ]]; then
+		sed -i '' "s/'statusline'/'statusline' -d/" zpreztorc
+	else
+		sed -i "s/'statusline'/'statusline' -d/" zpreztorc
+	fi
 else
 	input='Light'
 fi
@@ -176,4 +179,4 @@ EOD
 	unset input
 fi
 
-print -P '%B>>> Statusline has been successfully installed. Please restart zsh to view the theme.%b'
+print -P '%B>>> Statusline has been successfully installed. Please restart zsh to activate statusline.%b'
