@@ -3,14 +3,21 @@ Statusline
 
 ![Preview](images/preview.png)
 
-### A Powerline theme for [prezto](#prezto) and [oh-my-zsh](#oh-my-zsh)
-Wish your prompt displayed more information, but afraid of cluttering your prompt? Statusline is a responsive zsh theme that provides informational segments when you need them. For example, statusline only displays your user and machine names when you are in a remote shell. Likewise, task runtimes are only shown when they exceed ten seconds, the current working directory is dynamically shortened to fit onscreen, and more! Statusline is designed for solarized, and is compatible with the default OS X Terminal.app.
+### A Powerline-style prompt for [prezto](#prezto) and [oh-my-zsh](#oh-my-zsh)
+Wish your prompt displayed more information, but afraid of filling it with clutter? Statusline is a responsive zsh theme that provides informational segments when you need them. For example, statusline only displays your user and machine names when you are in a remote shell. Likewise, task runtimes are only shown when they exceed ten seconds, the current working directory is dynamically shortened to fit onscreen, and more! Statusline is designed for solarized (light and dark), and is compatible with the default OS X Terminal.app.
 
 ### Prerequisites
 (The [prezto version's installer](prezto/) checks for and installs all prerequisites)
 - [Powerline-patched menlo font](setup/MenloforPowerline-Regular.otf) (optional, see `--font` option)
 - [Solarized light](setup/Solarized\ Light.terminal) or [solarized dark](setup/Solarized\ Dark.terminal) Terminal.app profiles
 - zsh `5.0.0+` and git `2.0.0+`
+
+### Quick Install
+Got/want prezto? Statusline is one line away:
+```zsh
+zsh -c "$(curl -fsSL https://raw.githubusercontent.com/el1t/statusline/master/prezto/install)"
+```
+For more information, read on!
 
 ## Features
 - **Asynchronous** git status loading
@@ -41,7 +48,7 @@ When the length of the working directory exceeds that of the terminal, subdirect
 
 ## [Prezto](prezto/)
 ### Installation
-Simply run this in your shell:
+For automatic installation, simply run this in your shell:
 ```zsh
 zsh -c "$(curl -fsSL https://raw.githubusercontent.com/el1t/statusline/master/prezto/install)"
 ```
@@ -72,4 +79,4 @@ Set options in `zshrc` with `zstyle ':prezto:module:prompt' theme 'statusline' <
 Run `prompt -h statusline` for more information.
 
 ## [Oh-my-zsh](oh-my-zsh/)
-Since the [prezto version](#prezto) uses certain prezto modules which are not present in oh-my-zsh, missing features were ported to the [oh-my-zsh version](oh-my-zsh/statusline.zsh-theme). This includes asynchronous git status loading, which was ported from prezto's git-info, and the customizable settings. However, the settings are not exposed by oh-my-zsh, so customization is may be difficult. Also, the key-binding color indicator is currently not supported in this version.
+Since the [prezto version](#prezto) uses certain prezto modules which are not present in oh-my-zsh, missing features were ported to the [oh-my-zsh version](oh-my-zsh/statusline.zsh-theme). This includes asynchronous git status loading, which was ported from prezto's git-info, and the customizable settings. However, statusline's settings are not exposed by oh-my-zsh, so customization is more difficult. Also, the key-binding color indicator is currently not supported in this version.
