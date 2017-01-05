@@ -18,6 +18,7 @@ if [[ "$1" != '-f' && "$1" != '--force' ]]; then
 	cat <<EOH
 This script will install the statusline prezto theme.
 It will also install/setup prezto and other requisites as needed.
+You can rerun this script anytime to change the theme's settings (without reinstalling).
 EOH
 	if [[ -d ~/.oh-my-zsh/ ]] print -P '%F{1}%UWarning%u%f: oh-my-zsh will be uninstalled'
 	echo
@@ -27,79 +28,79 @@ EOH
 	echo
 fi
 
+#
 # Uninstall oh-my-zsh
+#
+
 if [[ -d ~/.oh-my-zsh/ ]]; then
 	print -P '%B>>> Uninstalling oh-my-zsh%b'
 	local +h ZSH=~/.oh-my-zsh/
+	echo "source $ZSH/lib/functions.zsh"
 	source "$ZSH/lib/functions.zsh"
 	if (( $+functions[uninstall_oh_my_zsh] )); then
 		uninstall_oh_my_zsh
 		# Detect if oh-my-zsh uninstall switched to bash
 		if [[ "${$(sh -c 'echo $SHELL'):t}" != 'zsh' ]]; then
 			print -P '%B>>> Switching back to zsh%b'
+			echo 'chsh -s /bin/zsh'
 			chsh -s /bin/zsh
 			# If oh-my-zsh switches to bash, it leaves a dirty .zshrc
 			if [[ -s ~/.zshrc ]]; then
 				print -P '%B%F{1}>>> Renaming .zshrc to .zshrc.omz-backup%f%b'
-				echo '(oh-my-zsh uninstall left a dirty .zshrc)'
+				print '(oh-my-zsh uninstall left a dirty .zshrc)'
 				mv ~/.zshrc ~/.zshrc.omz-backup
 			fi
 		fi
 	else
-		>&2 print 'statusline: could not locate omz uninstall function'
-		echo 'Please uninstall oh-my-zsh manually'
-		exit
+		>&2 print -P '%F{1}%BError%b%f: Could not locate uninstall function'
+		print 'Please uninstall oh-my-zsh manually'
+		exit 1
 	fi
 	unset ZSH
 fi
 
-# Setup prezto
+# Install prezto
 if [[ ! -d "${ZDOTDIR:-$HOME}/.zprezto/" ]]; then
 	print -P '%B>>> Installing prezto%b'
 	git clone --recursive https://github.com/sorin-ionescu/prezto.git "${ZDOTDIR:-$HOME}/.zprezto"
-	print -P '%B>>> Setting up zsh config files%b'
-	setopt LOCAL_OPTIONS EXTENDED_GLOB
-	local rcfile
-	for rcfile in "${ZDOTDIR:-$HOME}"/.zprezto/runcoms/^README.md(.N); do
-		# Append original to prezto version
-		local input="${ZDOTDIR:-$HOME}/.${rcfile:t}"
-		if [[ -s "$input" && -w "$rcfile" ]]; then
-			echo "Appending $input to $rcfile"
-			echo "\n#\n# Imported from $input\n#\n" >> "$rcfile"
-			cat "$input" >> "$rcfile"
-			[[ ! -d "${ZDOTDIR:-$HOME}/backup_runcoms/" ]] && mkdir "${ZDOTDIR:-$HOME}/backup_runcoms/"
-			mv "$input" "${input}.prezto-backup"
-		fi
-		# Link prezto version to original
-		echo "Linking $rcfile to $input"
-		ln -s "$rcfile" "$input"
-	done
 fi
 
-if [[ -d "${ZDOTDIR:-$HOME/.zprezto/modules/prompt/external/statusline}" ]]; then
+#
+# Install statusline
+#
+
+pushd "${ZDOTDIR:-$HOME}/.zprezto"
+if [[ -d modules/prompt/external/statusline ]]; then
 	print -P '%F{1}%UWarning%u%f: "modules/prompt/external/statusline" directory already exists.'
 	print -P '%B>>> %F{1}Skipping statusline download%f%b'
 else
-	cd "${ZDOTDIR:-$HOME}/.zprezto/"
 	print -P '%B>>> Downloading statusline%b'
 	git submodule add https://github.com/el1t/statusline.git modules/prompt/external/statusline
 fi
 
-# Enter statusline directory
-cd modules/prompt/external/statusline
+# Install patched font
+pushd modules/prompt/external/statusline
 if [[ "$OSTYPE" == darwin* ]]; then
 	if [[ ! -s ~/Libary/Fonts/MenloforPowerline-Regular.otf ]]; then
-		print -P '%B>>> Installing Powerline-patched font (current user only)%b'
-		cp setup/MenloforPowerline-Regular.otf ~/Library/Fonts
+		read -q input\?'Install custom Powerline-patched font? [yn]'
+		echo
+		if [[ "$input" == 'y' ]]; then
+			print -P '%B>>> Installing Powerline-patched font (current user only)%b'
+			cp setup/MenloforPowerline-Regular.otf ~/Library/Fonts
+		else
+			print -P '%F{1}%UWarning%u%f: font will default to block style'
+		fi
 	else
 		print -P '%B>>> Font already installed, skipping%b'
 	fi
 fi
+
+# Allow prezto to detect statusline
 print -P '%B>>> Linking into prezto themes directory%b'
 ln -fs "$PWD/prezto/prompt_statusline_setup" ../../functions/
 
 # Replace current prezto theme in settings
-cd ../../../../runcoms
+pushd ../../../../runcoms
 print -P '%B>>> Adding theme to zpreztorc%b'
 if [[ "$OSTYPE" == darwin* ]]; then
 	# Change line
@@ -122,7 +123,19 @@ if ! grep -q "'git' \\\\" zpreztorc ; then
 	fi
 fi
 
-read -q input\?'Use single-line prompt? (default 2-line, recommended) [yn]'
+# If custom font was not installed, use block font
+# $input will either be 'y' from 'Continue?' or the answer to 'Install font?'
+# This should handle an answer of 'n' to the latter question
+if [[ "$input" == 'n' ]]; then
+	if [[ "$OSTYPE" == darwin* ]]; then
+		sed -i '' "s/'statusline'/'statusline' -f block/" zpreztorc
+	else
+		sed -i "s/'statusline'/'statusline' -f block/" zpreztorc
+	fi
+fi
+
+# Prompt user to set statusline options
+read -q input\?'Switch to single-line prompt? (default 2-line) [yn]'
 echo
 if [[ "$input" == 'y' ]]; then
 	if [[ "$OSTYPE" == darwin* ]]; then
@@ -143,11 +156,13 @@ if [[ "$input" == 'y' ]]; then
 else
 	input='Light'
 fi
+
+# Enter modules/prompt/external/statusline directory
+popd
 if [[ "$OSTYPE" == darwin* ]]; then
 	input="Solarized $input"
 	# Set theme as default in Terminal.app
 	# from https://github.com/mathiasbynens/dotfiles/blob/master/.osx
-	cd -
 	osascript <<EOD
 tell application "Terminal"
 	local allOpenedWindows
@@ -176,7 +191,9 @@ tell application "Terminal"
 	end repeat
 end tell
 EOD
-	unset input
 fi
 
+# Return to original directory
+popd; popd
+unset input
 print -P '%B>>> Statusline has been successfully installed. Please restart zsh to activate statusline.%b'
