@@ -119,7 +119,7 @@ if ! grep -q "'git' \\\\" zpreztorc ; then
 \\  'git' \\\\
 " zpreztorc
 	else
-		sed -i "'completion' \\\\/a\\\\  'git' \\\\" zpreztorc
+		sed -i "/'completion' \\\\/a\\\\  'git' \\\\" zpreztorc
 	fi
 fi
 
