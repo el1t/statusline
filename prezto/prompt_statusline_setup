@@ -38,7 +38,7 @@ _prompt_statusline_right_segments=(git-status virtualenv clock history machine)
 
 prompt_statusline_draw() {
 	local -a left right start end center diamond standalone no_draw warning
-	local escape_sequences='%([BSUbfksu]|([FB]|){*})'
+	local escape_sequences='%([BSUbfksu]|([FK]|){*})'
 	zparseopts -D l=left -left=left \
 		r=right -right=right \
 		s=start -start=start \
@@ -56,16 +56,16 @@ prompt_statusline_draw() {
 		[[ -n $2 ]] && fg="%F{$2}" || fg='%f'
 		if [[ -n $_prompt_statusline_bg[4] ]]; then
 			if [[ $1 != $_prompt_statusline_bg[4] ]]; then
-				echo -n " $bg%F{$_prompt_statusline_bg[4]}$_prompt_statusline_symbols[4] "
+				echo -n " $bg%F{$_prompt_statusline_bg[4]}$_prompt_statusline_symbols[4]"
 			else
-				echo -n " $bg%F{$_prompt_statusline_bg[2]}$_prompt_statusline_symbols[3] "
+				echo -n " $bg%F{$_prompt_statusline_bg[2]}$_prompt_statusline_symbols[3]"
 			fi
 			(( _prompt_statusline_length += 2 ))
 		else
-			echo -n "$bg "
+			echo -n "$bg"
 		fi
 		_prompt_statusline_bg[4]=$1
-		echo -n $fg
+		echo -n "$fg "
 		if [[ -n $3 ]]; then
 			echo -n $3
 			(( _prompt_statusline_length += ${#${(S%%)${3}//$~escape_sequences/}} + 2 ))
@@ -80,7 +80,7 @@ prompt_statusline_draw() {
 			if [[ $1 != $_prompt_statusline_bg[4] ]]; then
 				echo -n "%F{$_prompt_statusline_bg[4]}$bg%S$_prompt_statusline_symbols[1]%s$fg "
 			else
-				echo -n "$bg%F{$_prompt_statusline_bg[2]}$_prompt_statusline_symbols[2]$fg "
+				echo -n "%F{$_prompt_statusline_bg[2]}$bg$_prompt_statusline_symbols[2]$fg "
 			fi
 		else
 			echo -n "%F{$1}$_prompt_statusline_symbols[1]$bg$fg "
@@ -409,11 +409,11 @@ prompt_statusline_help() {
 "This prompt supports solarized light and dark. Solarized light with a white statusbar on two lines is the default style.
 You can invoke it thus:
 
-	prompt statusline [--color <color>] [--dark] [--single]
+	prompt statusline [--color <color>] [--dark] [--font <font>] [--single]
 
 Set this theme with the following in your rc file:
 
-	zstyle ':prezto:module:prompt' theme 'statusline' [-c|--color <color>] [-d|--dark] [-f|--font] [-s|--single]
+	zstyle ':prezto:module:prompt' theme 'statusline' [-c|--color <color>] [-d|--dark] [-f|--font <font>] [-s|--single]
 
 %BOPTIONS%b
 	-c, --color <color>
