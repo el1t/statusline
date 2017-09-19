@@ -7,9 +7,9 @@ if [[ "$1" != '-f' && "$1" != '--force' ]]; then
 	local min_zsh_version='5.0.0'
 	if ! autoload -Uz is-at-least || ! is-at-least "$min_zsh_version"; then
 		>&2 echo "statusline: old shell detected, minimum supported: $min_zsh_version"
-		read -q input \?'Continue anyways? [yn] '
+		read -q input \?'Continue anyways? [n] '
 		echo
-		if [[ "$input" == 'n' ]] exit
+		if [[ "$input" != 'y' ]] exit
 		echo
 	fi
 	# OS check
@@ -22,7 +22,7 @@ You can rerun this script anytime to change the theme's settings (without reinst
 EOH
 	if [[ -d ~/.oh-my-zsh/ ]] print -P '%F{1}%UWarning%u%f: oh-my-zsh will be uninstalled'
 	echo
-	read -q input\?'Continue? [yn] '
+	read -q input\?'Continue? [y] '
 	echo
 	if [[ "$input" == 'n' ]] exit
 	echo
@@ -82,13 +82,13 @@ fi
 pushd modules/prompt/external/statusline
 if [[ "$OSTYPE" == darwin* ]]; then
 	if [[ ! -s ~/Libary/Fonts/MenloforPowerline-Regular.otf ]]; then
-		read -q input\?'Install custom Powerline-patched font? [yn]'
+		read -q input\?'Install custom Powerline-patched font? [y]'
 		echo
-		if [[ "$input" == 'y' ]]; then
+		if [[ "$input" == 'n' ]]; then
+			print -P '%F{1}%UWarning%u%f: font will default to block style'
+		else
 			print -P '%B>>> Installing Powerline-patched font (current user only)%b'
 			cp setup/MenloforPowerline-Regular.otf ~/Library/Fonts
-		else
-			print -P '%F{1}%UWarning%u%f: font will default to block style'
 		fi
 	else
 		print -P '%B>>> Font already installed, skipping%b'
@@ -135,26 +135,26 @@ if [[ "$input" == 'n' ]]; then
 fi
 
 # Prompt user to set statusline options
-read -q input\?'Switch to single-line prompt? (default 2-line) [yn]'
+read -q input\?'Use double-line prompt? [y]'
 echo
-if [[ "$input" == 'y' ]]; then
+if [[ "$input" == 'n' ]]; then
 	if [[ "$OSTYPE" == darwin* ]]; then
 		sed -i '' "s/'statusline'/'statusline' -s/" zpreztorc
 	else
 		sed -i "s/'statusline'/'statusline' -s/" zpreztorc
 	fi
 fi
-read -q input\?'Use dark theme? (default Solarized Light) [yn] '
+read -q input\?'Use dark theme? [y] '
 echo
-if [[ "$input" == 'y' ]]; then
+if [[ "$input" == 'n' ]]; then
+	input='Light'
+else
 	input='Dark'
 	if [[ "$OSTYPE" == darwin* ]]; then
 		sed -i '' "s/'statusline'/'statusline' -d/" zpreztorc
 	else
 		sed -i "s/'statusline'/'statusline' -d/" zpreztorc
 	fi
-else
-	input='Light'
 fi
 
 # Enter modules/prompt/external/statusline directory
