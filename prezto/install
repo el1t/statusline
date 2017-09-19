@@ -90,7 +90,7 @@ if [[ -d modules/prompt/external/statusline ]]; then
 	print -P '%B>>> %F{1}Skipping statusline download%f%b'
 else
 	print -P '%B>>> Downloading statusline%b'
-	git submodule add https://github.com/el1t/statusline.git modules/prompt/external/statusline
+	git submodule add --depth 1 -- https://github.com/el1t/statusline.git modules/prompt/external/statusline
 fi
 
 # Install patched font
