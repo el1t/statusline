@@ -30,6 +30,10 @@ For more information, read on!
 - **Powerline** and **legacy font** support
 - Tmux compatible
 
+### Single line mode
+In addition to a two-line prompt, statusline supports a [single-line mode](#options)
+![Single line](images/single-line.png)
+
 ### Segments
 | Name       | Description               | Context                      |
 | ---------- | ------------------------- | ---------------------------- |
