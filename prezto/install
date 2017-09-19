@@ -63,6 +63,21 @@ fi
 if [[ ! -d "${ZDOTDIR:-$HOME}/.zprezto/" ]]; then
 	print -P '%B>>> Installing prezto%b'
 	git clone --recursive https://github.com/sorin-ionescu/prezto.git "${ZDOTDIR:-$HOME}/.zprezto"
+
+	print -P '%B>>> Linking zsh dotfiles%b'
+	setopt EXTENDED_GLOB
+	for rcfile in "${ZDOTDIR:-$HOME}"/.zprezto/runcoms/^README.md(.N); do
+		dotfile="${ZDOTDIR:-$HOME}/.${rcfile:t}"
+		if [[ -s "$dotfile" ]]; then
+			echo "Importing $dotfile to $rcfile"
+			print -P "\n#\n# Import from $dotfile\n#\n\n" >>! "$rcfile"
+			cat "$dotfile" >> "$rcfile"
+			echo "Backing up $dotfile to $dotfile.backup"
+			mv "$dotfile" "$dotfile.backup"
+		fi
+		ln -s "$rcfile" "$dotfile"
+	done
+	unset dotfile
 fi
 
 #
