@@ -470,6 +470,9 @@ prompt_statusline_setup() {
 	add-zsh-hook preexec prompt_statusline_preexec
 	add-zsh-hook precmd prompt_statusline_precmd
 
+	# Enable prezto editor-info module
+	zstyle ':prezto:module:prompt' managed 'yes'
+
 	# Customize theme
 	local -a dark color single font
 	zparseopts d=dark -dark=dark \
